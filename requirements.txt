@@ -4,6 +4,6 @@ simple-websocket>=1.0.0
 werkzeug>=3.0.0
 mysql-connector-python>=8.3.0
 bleach>=6.1.0
-gunicorn>=21.2.0
+gunicorn==23.0.0
 eventlet>=0.35.0
 redis>=5.0.0   
