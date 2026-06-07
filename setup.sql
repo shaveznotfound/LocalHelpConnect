@@ -1,7 +1,3 @@
--- ══════════════════════════════════════════════════════════════════
---  Local Help Connect v6 — Full Schema & Migration Script
---  Run this to create the database fresh, OR migrate from lhc_v5.
--- ══════════════════════════════════════════════════════════════════
 
 -- 1. Create database
 CREATE DATABASE IF NOT EXISTS `lhc_v7`
@@ -132,23 +128,3 @@ CREATE TABLE IF NOT EXISTS reports (
   FOREIGN KEY (reported_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ══════════════════════════════════════════════════════════════════
---  MIGRATION: If upgrading from lhc_v5 use these ALTER statements
--- ══════════════════════════════════════════════════════════════════
-
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(300) DEFAULT NULL AFTER is_banned;
--- ALTER TABLE job_requests ADD COLUMN IF NOT EXISTS request_code VARCHAR(20) AFTER id;
--- ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS msg_type ENUM('text','image','file') NOT NULL DEFAULT 'text' AFTER message;
--- ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS file_url VARCHAR(300) DEFAULT NULL AFTER msg_type;
--- ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS file_name VARCHAR(200) DEFAULT NULL AFTER file_url;
--- ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS file_size INT DEFAULT NULL AFTER file_name;
--- UPDATE job_requests SET request_code = CONCAT('REQ', YEAR(created_at), LPAD(id, 4, '0')) WHERE request_code IS NULL OR request_code = '';
--- ALTER TABLE job_requests ADD UNIQUE KEY uq_req_code (request_code);
-
--- ══════════════════════════════════════════════════════════════════
---  v7 MIGRATION: Price negotiation + expanded categories
--- ══════════════════════════════════════════════════════════════════
--- Run these ALTER statements when upgrading from v6:
--- ALTER TABLE job_requests ADD COLUMN IF NOT EXISTS customer_budget DECIMAL(10,2) DEFAULT NULL AFTER category;
--- ALTER TABLE job_requests ADD COLUMN IF NOT EXISTS worker_counter  DECIMAL(10,2) DEFAULT NULL AFTER customer_budget;
--- ALTER TABLE job_requests ADD COLUMN IF NOT EXISTS price_status ENUM('open','countered','agreed') NOT NULL DEFAULT 'open' AFTER worker_counter;
