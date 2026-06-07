@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}My Profile — Local Help Connect{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <div class="inner-container">
+
+    <div class="inner-header">
+      <div>
+        <h1 class="inner-title"><i class="ph ph-user-circle"></i> My Worker Profile</h1>
+        <p class="inner-sub">Showcase your skills to attract customers</p>
+      </div>
+      <a href="{{ url_for('dashboard') }}" class="btn-back">
+        <i class="ph ph-arrow-left"></i> Dashboard
+      </a>
+    </div>
+
+    <div class="profile-edit-layout">
+
+      <!-- Preview Card -->
+      <div class="profile-preview-panel">
+        <div class="preview-card">
+          <div class="preview-avatar" id="previewAvatar">{{ user.full_name[0].upper() }}</div>
+          <h2 class="preview-name">{{ user.full_name }}</h2>
+          <div class="preview-avail-badge avail-{{ profile.availability if profile else 'offline' }}" id="previewAvail">
+            <i class="ph-fill ph-circle"></i>
+            {{ (profile.availability if profile else 'Offline') | capitalize }}
+          </div>
+          <div class="preview-info">
+            <p id="previewLocation">
+              <i class="ph ph-map-pin"></i>
+              {% if profile and profile.location %}{{ profile.location }}{% else %}Location not set{% endif %}
+            </p>
+            <p id="previewExp">
+              <i class="ph ph-clock-countdown"></i>
+              {% if profile and profile.experience %}{{ profile.experience }}{% else %}Experience not set{% endif %}
+            </p>
+          </div>
+          <div class="preview-skills" id="previewSkills">
+            {% if profile and profile.skills %}
+              {% for s in profile.skills.split(',') %}
+              <span class="skill-chip">{{ s.strip() }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="preview-empty">No skills added yet</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Form -->
+      <div class="profile-edit-panel">
+        <form method="POST" action="{{ url_for('worker_profile') }}" id="profileForm">
+
+          <div class="form-group">
+            <label class="form-label" for="skills">
+              <i class="ph ph-wrench"></i> Skills <span class="required">*</span>
+            </label>
+            <input type="text" id="skills" name="skills" class="form-input"
+              placeholder="e.g. Electrical, Wiring, Panel Repair"
+              value="{{ profile.skills if profile else '' }}">
+            <small class="form-hint">Separate multiple skills with commas. These appear as tags.</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="experience">
+              <i class="ph ph-clock-countdown"></i> Experience
+            </label>
+            <input type="text" id="experience" name="experience" class="form-input"
+              placeholder="e.g. 5 years, 2+ years in residential"
+              value="{{ profile.experience if profile else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="location">
+              <i class="ph ph-map-pin"></i> Location
+            </label>
+            <div style="display:flex;gap:.5rem;align-items:center">
+              <input type="text" id="location" name="location" class="form-input"
+                placeholder="e.g. Sector 14, Gurugram"
+                value="{{ profile.location if profile else '' }}" style="flex:1">
+              <button type="button" id="gpsBtn" title="Use my current location"
+                style="flex-shrink:0;display:inline-flex;align-items:center;gap:.3rem;padding:.55rem .9rem;background:#eef2ff;color:#4338ca;border:1.5px solid #c7d2fe;border-radius:10px;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s">
+                <i class="ph ph-crosshair" id="gpsBtnIcon"></i> <span id="gpsBtnText">Detect</span>
+              </button>
+            </div>
+            <input type="hidden" id="lat" name="lat" value="{{ profile.lat if profile and profile.lat else '' }}">
+            <input type="hidden" id="lng" name="lng" value="{{ profile.lng if profile and profile.lng else '' }}">
+            <small class="form-hint">
+              Type your area/city, or click <strong>Detect</strong> to auto-fill from GPS.<br>
+              <span id="gpsStatus" style="color:#6366f1;font-style:italic"></span>
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="availability">
+              <i class="ph ph-circle-wavy-check"></i> Availability
+            </label>
+            <div class="avail-select-group">
+              {% set avail = profile.availability if profile else 'available' %}
+              <label class="avail-option {% if avail == 'available' %}selected{% endif %}" id="availAvailable">
+                <input type="radio" name="availability" value="available" {% if avail == 'available' %}checked{% endif %}>
+                <i class="ph-fill ph-circle" style="color:#22c55e"></i> Available
+              </label>
+              <label class="avail-option {% if avail == 'busy' %}selected{% endif %}" id="availBusy">
+                <input type="radio" name="availability" value="busy" {% if avail == 'busy' %}checked{% endif %}>
+                <i class="ph-fill ph-circle" style="color:#f59e0b"></i> Busy
+              </label>
+              <label class="avail-option {% if avail == 'offline' %}selected{% endif %}" id="availOffline">
+                <input type="radio" name="availability" value="offline" {% if avail == 'offline' %}checked{% endif %}>
+                <i class="ph-fill ph-circle" style="color:#94a3b8"></i> Offline
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="description">
+              <i class="ph ph-text-align-left"></i> About You
+            </label>
+            <textarea id="description" name="description" class="form-textarea"
+              rows="4" placeholder="Describe your expertise, past work, and what makes you stand out...">{{ profile.description if profile else '' }}</textarea>
+          </div>
+
+          <button type="submit" class="btn-auth-submit">
+            <i class="ph ph-floppy-disk"></i> Save Profile
+          </button>
+        </form>
+      </div>
+
+    </div><!-- /.profile-edit-layout -->
+
+    <!-- ── AVAILABILITY CALENDAR (feature 2) ─────────────────────── -->
+    <div style="margin-top:2rem">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem">
+        <h2 style="font-size:1.05rem;font-weight:700;color:#1e1b4b;margin:0">
+          <i class="ph ph-calendar-x" style="color:#6366f1"></i> Manage Unavailable Dates
+        </h2>
+        <span style="font-size:.75rem;color:#9ca3af">Customers won't be able to book you on blocked dates</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;align-items:start">
+
+        <!-- Add block form -->
+        <div class="form-card" style="padding:1.2rem">
+          <h3 style="font-size:.88rem;font-weight:700;margin-bottom:1rem;color:#374151">
+            <i class="ph ph-plus-circle" style="color:#6366f1"></i> Block a Date
+          </h3>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+          <form method="POST" action="{{ url_for('block_date') }}">
+            <div class="form-group" style="margin-bottom:.75rem">
+              <input type="text" name="date" id="blockDatePicker" class="form-input"
+                placeholder="Select date…" autocomplete="off" readonly required>
+            </div>
+            <div class="form-group" style="margin-bottom:.75rem">
+              <input type="text" name="reason" class="form-input"
+                placeholder="Reason (e.g. Personal, Holiday)" maxlength="100">
+            </div>
+            <button type="submit" style="background:#6366f1;color:#fff;border:none;border-radius:9px;padding:.55rem 1.1rem;font-size:.83rem;font-weight:700;cursor:pointer;width:100%">
+              <i class="ph ph-calendar-x"></i> Block This Date
+            </button>
+          </form>
+        </div>
+
+        <!-- Existing blocked dates -->
+        <div class="form-card" style="padding:1.2rem">
+          <h3 style="font-size:.88rem;font-weight:700;margin-bottom:1rem;color:#374151">
+            <i class="ph ph-list-checks" style="color:#ef4444"></i> Your Blocked Dates
+          </h3>
+          {% if blocked %}
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            {% for b in blocked %}
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#fff5f5;border-radius:8px;padding:.5rem .75rem;border:1px solid #fee2e2">
+              <div>
+                <span style="font-weight:600;font-size:.85rem;color:#374151">{{ b.blocked_date }}</span>
+                {% if b.reason %}<span style="font-size:.72rem;color:#9ca3af;margin-left:.4rem">· {{ b.reason }}</span>{% endif %}
+              </div>
+              <form method="POST" action="{{ url_for('unblock_date') }}" style="margin:0">
+                <input type="hidden" name="date" value="{{ b.blocked_date }}">
+                <button type="submit" title="Unblock"
+                  style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:1rem;padding:.1rem .25rem">
+                  <i class="ph ph-x-circle"></i>
+                </button>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="text-align:center;color:#9ca3af;font-size:.82rem;padding:1rem 0">
+            <i class="ph ph-calendar-check" style="font-size:1.5rem;display:block;margin-bottom:.3rem;color:#d1d5db"></i>
+            No blocked dates yet
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.inner-container -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+flatpickr('#blockDatePicker', {
+  minDate: 'today',
+  dateFormat: 'Y-m-d',
+  disableMobile: true,
+});
+
+// GPS / Geolocation detection
+const gpsBtn = document.getElementById('gpsBtn');
+const gpsBtnIcon = document.getElementById('gpsBtnIcon');
+const gpsBtnText = document.getElementById('gpsBtnText');
+const gpsStatus = document.getElementById('gpsStatus');
+const latInput = document.getElementById('lat');
+const lngInput = document.getElementById('lng');
+
+if (gpsBtn) {
+  gpsBtn.addEventListener('click', function() {
+    if (!navigator.geolocation) {
+      gpsStatus.textContent = 'Geolocation not supported by your browser.';
+      return;
+    }
+    gpsBtn.disabled = true;
+    gpsBtnIcon.className = 'ph ph-spinner';
+    gpsBtnText.textContent = 'Locating…';
+    gpsStatus.textContent = 'Fetching your location…';
+
+    navigator.geolocation.getCurrentPosition(
+      async function(pos) {
+        const lat = pos.coords.latitude.toFixed(7);
+        const lng = pos.coords.longitude.toFixed(7);
+        latInput.value = lat;
+        lngInput.value = lng;
+        gpsStatus.textContent = 'Getting address…';
+        // Reverse geocode via Nominatim
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          const data = await res.json();
+          if (data && data.address) {
+            const a = data.address;
+            const parts = [
+              a.suburb || a.neighbourhood || a.quarter,
+              a.city || a.town || a.village || a.county,
+              a.state
+            ].filter(Boolean);
+            const addr = parts.join(', ');
+            if (addr) {
+              document.getElementById('location').value = addr;
+              document.getElementById('previewLocation').innerHTML =
+                `<i class="ph ph-map-pin"></i> ${addr}`;
+            }
+            gpsStatus.textContent = '✓ Location detected: ' + (addr || `${lat}, ${lng}`);
+          }
+        } catch (e) {
+          gpsStatus.textContent = `✓ Coordinates saved (${lat}, ${lng})`;
+        }
+        gpsBtnIcon.className = 'ph ph-check-circle';
+        gpsBtnText.textContent = 'Done';
+        gpsBtn.disabled = false;
+      },
+      function(err) {
+        gpsStatus.textContent = 'Could not get location. Please allow location access.';
+        gpsBtnIcon.className = 'ph ph-crosshair';
+        gpsBtnText.textContent = 'Detect';
+        gpsBtn.disabled = false;
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+}
+
+// Clear lat/lng if user manually edits location field
+document.getElementById('location').addEventListener('input', function() {
+  latInput.value = '';
+  lngInput.value = '';
+  gpsStatus.textContent = '';
+});
+
+
+const locationInput = document.getElementById('location');
+const expInput = document.getElementById('experience');
+const previewSkills = document.getElementById('previewSkills');
+const previewLocation = document.getElementById('previewLocation');
+const previewExp = document.getElementById('previewExp');
+const previewAvail = document.getElementById('previewAvail');
+
+skillsInput.addEventListener('input', function() {
+  const parts = this.value.split(',').map(s => s.trim()).filter(Boolean);
+  if (parts.length) {
+    previewSkills.innerHTML = parts.slice(0, 6).map(s => `<span class="skill-chip">${s}</span>`).join('');
+  } else {
+    previewSkills.innerHTML = '<span class="preview-empty">No skills added yet</span>';
+  }
+});
+
+locationInput.addEventListener('input', function() {
+  previewLocation.innerHTML = `<i class="ph ph-map-pin"></i> ${this.value || 'Location not set'}`;
+});
+
+expInput.addEventListener('input', function() {
+  previewExp.innerHTML = `<i class="ph ph-clock-countdown"></i> ${this.value || 'Experience not set'}`;
+});
+
+// Availability visual selection
+document.querySelectorAll('.avail-option').forEach(opt => {
+  opt.addEventListener('click', function() {
+    document.querySelectorAll('.avail-option').forEach(o => o.classList.remove('selected'));
+    this.classList.add('selected');
+    const val = this.querySelector('input').value;
+    const colors = {available: '#22c55e', busy: '#f59e0b', offline: '#94a3b8'};
+    previewAvail.className = `preview-avail-badge avail-${val}`;
+    previewAvail.innerHTML = `<i class="ph-fill ph-circle"></i> ${val.charAt(0).toUpperCase() + val.slice(1)}`;
+  });
+});
+</script>
+{% endblock %}

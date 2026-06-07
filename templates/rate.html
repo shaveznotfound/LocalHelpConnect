@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Rate {{ req.worker_name }} — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<style>
+.rate-page { min-height:calc(100vh - 70px); background:var(--slate-50); display:flex; align-items:center; justify-content:center; padding:2rem 1rem; }
+.rate-card { background:#fff; border-radius:24px; box-shadow:0 8px 40px rgba(99,102,241,.12); width:100%; max-width:560px; overflow:hidden; }
+.rate-header { background:linear-gradient(135deg,#4338ca,#7c3aed); padding:2rem; text-align:center; color:white; }
+.rate-avatar { width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,.2); color:white; font-size:1.9rem; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; border:3px solid rgba(255,255,255,.3); }
+.rate-header h2 { font-size:1.2rem; font-weight:800; margin:0 0 .3rem; }
+.rate-header p  { font-size:.85rem; opacity:.8; margin:0; }
+.rate-body { padding:1.6rem 2rem; }
+
+/* Dimension label */
+.dim-label { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#374151; margin-bottom:.3rem; display:flex; align-items:center; gap:.4rem; }
+.dim-label i { color:#6366f1; font-size:1rem; }
+.dim-group { margin-bottom:1.1rem; }
+
+/* Star selector — reusable per dimension */
+.star-row { display:flex; flex-direction:row-reverse; gap:.3rem; margin-bottom:.2rem; }
+.star-row input[type="radio"] { display:none; }
+.star-row label { font-size:2rem; color:#e5e7eb; cursor:pointer; transition:color .12s,transform .12s; line-height:1; }
+.star-row label:hover,.star-row label:hover~label,.star-row input:checked~label { color:#f59e0b; }
+.star-row label:hover { transform:scale(1.15); }
+
+.dim-hint { font-size:.72rem; color:#9ca3af; min-height:1em; margin-bottom:.4rem; }
+
+/* Overall display (computed) */
+.overall-box { background:linear-gradient(135deg,#fef3c7,#fff); border:1px solid #fde68a; border-radius:12px; padding:.85rem 1.1rem; margin:1.2rem 0; display:flex; align-items:center; gap:.75rem; }
+.overall-stars { font-size:1.5rem; color:#f59e0b; letter-spacing:2px; }
+.overall-score { font-size:1.5rem; font-weight:800; color:#92400e; }
+.overall-label { font-size:.78rem; color:#92400e; }
+
+.review-label { display:block; font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#6b7280; margin-bottom:.5rem; }
+.review-textarea { width:100%; border:1.5px solid #e5e7eb; border-radius:12px; padding:.85rem 1rem; font-size:.9rem; line-height:1.5; resize:vertical; min-height:90px; font-family:inherit; outline:none; transition:border-color .2s; }
+.review-textarea:focus { border-color:#6366f1; }
+
+.btn-submit-rating { width:100%; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border:none; border-radius:12px; padding:.9rem; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.5rem; margin-top:1.2rem; box-shadow:0 4px 16px rgba(245,158,11,.3); transition:transform .15s,box-shadow .15s; }
+.btn-submit-rating:hover { transform:translateY(-2px); box-shadow:0 6px 22px rgba(245,158,11,.4); }
+.btn-submit-rating:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.btn-skip { display:block; text-align:center; color:#9ca3af; font-size:.82rem; margin-top:.9rem; text-decoration:none; }
+.btn-skip:hover { color:#6b7280; }
+
+.job-summary-strip { background:#f8fafc; border-radius:10px; padding:.85rem 1rem; margin-bottom:1.2rem; font-size:.82rem; color:#6b7280; display:flex; flex-wrap:wrap; gap:.6rem 1.2rem; }
+.job-summary-strip span { display:flex; align-items:center; gap:.3rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rate-page">
+  <div class="rate-card">
+    <div class="rate-header">
+      <div class="rate-avatar">{{ req.worker_name[0].upper() }}</div>
+      <h2>How was {{ req.worker_name.split()[0] }}?</h2>
+      <p>Rate on 3 dimensions — your feedback shapes their score</p>
+    </div>
+
+    <div class="rate-body">
+      <div class="job-summary-strip">
+        <span><i class="ph ph-briefcase"></i> Job #{{ req.id }}</span>
+        <span><i class="ph ph-map-pin"></i> {{ req.location }}</span>
+        {% if req.category %}<span><i class="ph ph-tag"></i> {{ req.category }}</span>{% endif %}
+      </div>
+
+      <form method="POST" action="{{ url_for('rate_worker', req_id=req.id) }}" id="ratingForm">
+
+        <!-- Dimension 1: Punctuality -->
+        <div class="dim-group">
+          <div class="dim-label"><i class="ph ph-clock"></i> Punctuality</div>
+          <div class="star-row" id="row-punc">
+            {% for v in [5,4,3,2,1] %}
+            <input type="radio" name="rating_punctuality" id="punc{{ v }}" value="{{ v }}">
+            <label for="punc{{ v }}" title="{{ v }} star">★</label>
+            {% endfor %}
+          </div>
+          <div class="dim-hint" id="hint-punc">Did they arrive on time?</div>
+        </div>
+
+        <!-- Dimension 2: Quality -->
+        <div class="dim-group">
+          <div class="dim-label"><i class="ph ph-wrench"></i> Work Quality</div>
+          <div class="star-row" id="row-qual">
+            {% for v in [5,4,3,2,1] %}
+            <input type="radio" name="rating_quality" id="qual{{ v }}" value="{{ v }}">
+            <label for="qual{{ v }}" title="{{ v }} star">★</label>
+            {% endfor %}
+          </div>
+          <div class="dim-hint" id="hint-qual">How good was the actual work?</div>
+        </div>
+
+        <!-- Dimension 3: Communication -->
+        <div class="dim-group">
+          <div class="dim-label"><i class="ph ph-chat-circle"></i> Communication</div>
+          <div class="star-row" id="row-comm">
+            {% for v in [5,4,3,2,1] %}
+            <input type="radio" name="rating_communication" id="comm{{ v }}" value="{{ v }}">
+            <label for="comm{{ v }}" title="{{ v }} star">★</label>
+            {% endfor %}
+          </div>
+          <div class="dim-hint" id="hint-comm">Were they responsive and clear?</div>
+        </div>
+
+        <!-- Live overall score display -->
+        <div class="overall-box" id="overallBox" style="display:none">
+          <div>
+            <div class="overall-stars" id="overallStars"></div>
+            <div class="overall-label">Overall Score (average)</div>
+          </div>
+          <div class="overall-score" id="overallScore"></div>
+        </div>
+
+        <label class="review-label" for="review"><i class="ph ph-chat-circle-text"></i> Write a Review (optional)</label>
+        <textarea class="review-textarea" name="review" id="review"
+          placeholder="Tell others about your experience — was the job done well? Would you hire again?" maxlength="1000"></textarea>
+
+        <button type="submit" class="btn-submit-rating" id="submitBtn" disabled>
+          <i class="ph-fill ph-star"></i> Submit Rating
+        </button>
+      </form>
+      <a href="{{ url_for('my_requests') }}" class="btn-skip">Skip for now</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const dims = {
+  punc: { hints: {1:'Very late',2:'A bit late',3:'Roughly on time',4:'On time',5:'Perfectly punctual!'} },
+  qual: { hints: {1:'Poor quality',2:'Below average',3:'Acceptable',4:'Good work',5:'Excellent craftsmanship!'} },
+  comm: { hints: {1:'Hard to reach',2:'Rarely replied',3:'Adequate',4:'Good communicator',5:'Outstanding!'} },
+};
+
+const scores = { punc: null, qual: null, comm: null };
+const starsMap = { '★★★★★':5, '★★★★':4.5, '★★★':4, '★★':3, '★':2 };
+
+function updateOverall() {
+  const vals = Object.values(scores).filter(v => v !== null);
+  if (vals.length === 3) {
+    const avg = vals.reduce((a,b)=>a+b,0) / 3;
+    const rounded = Math.round(avg * 2) / 2;  // round to nearest .5
+    document.getElementById('overallBox').style.display = 'flex';
+    document.getElementById('overallScore').textContent = avg.toFixed(1) + ' / 5';
+    document.getElementById('overallStars').textContent = '★'.repeat(Math.round(avg));
+    document.getElementById('submitBtn').disabled = false;
+  } else {
+    document.getElementById('overallBox').style.display = 'none';
+    document.getElementById('submitBtn').disabled = true;
+  }
+}
+
+['punc','qual','comm'].forEach(dim => {
+  document.querySelectorAll(`input[name="rating_${dim === 'punc' ? 'punctuality' : dim === 'qual' ? 'quality' : 'communication'}"]`).forEach(r => {
+    r.addEventListener('change', function() {
+      scores[dim] = parseInt(this.value);
+      const hintEl = document.getElementById('hint-'+dim);
+      if (hintEl) hintEl.textContent = dims[dim].hints[scores[dim]] || '';
+      updateOverall();
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin — Local Help Connect{% endblock %}</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-w: 240px;
+      --sidebar-bg: #0f0f14;
+      --sidebar-border: rgba(255,255,255,0.07);
+      --sidebar-text: rgba(255,255,255,0.55);
+      --sidebar-text-active: #fff;
+      --sidebar-hover: rgba(255,255,255,0.05);
+      --sidebar-active-bg: rgba(245,158,11,0.15);
+      --sidebar-accent: #f59e0b;
+      --body-bg: #f7f8fc;
+      --card-bg: #fff;
+      --card-border: #e8eaf0;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--body-bg);
+      color: var(--text-primary);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── SIDEBAR ── */
+    .admin-sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+      border-right: 1px solid var(--sidebar-border);
+    }
+
+    .sidebar-brand {
+      padding: 1.5rem 1.25rem 1rem;
+      border-bottom: 1px solid var(--sidebar-border);
+    }
+    .sidebar-brand-label {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .sidebar-brand-label .brand-icon {
+      width: 28px; height: 28px;
+      background: var(--sidebar-accent);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .9rem;
+    }
+    .sidebar-admin-badge {
+      font-size: .65rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--sidebar-accent);
+      background: rgba(245,158,11,.12);
+      border: 1px solid rgba(245,158,11,.25);
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-top: .35rem;
+      display: inline-block;
+    }
+
+    .sidebar-nav {
+      padding: .75rem 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .sidebar-section-label {
+      font-size: .65rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.25);
+      padding: .75rem 1.25rem .25rem;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      padding: .6rem 1.25rem;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      font-size: .88rem;
+      border-radius: 0;
+      transition: background .15s, color .15s;
+      position: relative;
+    }
+    .sidebar-link i { font-size: 1.05rem; flex-shrink: 0; }
+    .sidebar-link:hover { background: var(--sidebar-hover); color: var(--sidebar-text-active); }
+    .sidebar-link.active {
+      background: var(--sidebar-active-bg);
+      color: var(--sidebar-accent);
+      font-weight: 500;
+    }
+    .sidebar-link.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--sidebar-accent);
+      border-radius: 0 2px 2px 0;
+    }
+    .sidebar-count {
+      margin-left: auto;
+      background: rgba(245,158,11,.15);
+      color: var(--sidebar-accent);
+      font-size: .7rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+    }
+
+    .sidebar-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--sidebar-border);
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    .sidebar-footer-avatar {
+      width: 30px; height: 30px;
+      background: var(--sidebar-accent);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .8rem; color: #000;
+      flex-shrink: 0;
+    }
+    .sidebar-footer-name { font-size: .82rem; color: rgba(255,255,255,.8); font-weight: 500; }
+    .sidebar-footer-role { font-size: .7rem; color: var(--sidebar-text); }
+    .sidebar-footer-logout {
+      margin-left: auto;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      font-size: 1rem;
+      transition: color .15s;
+    }
+    .sidebar-footer-logout:hover { color: #ef4444; }
+
+    /* ── MAIN AREA ── */
+    .admin-main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .admin-topbar {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--card-border);
+      padding: .875rem 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0; z-index: 50;
+    }
+    .admin-topbar-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+    }
+    .admin-topbar-title small {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      font-size: .8rem;
+      color: var(--text-secondary);
+      display: block;
+      margin-top: 1px;
+    }
+    .topbar-actions { display: flex; align-items: center; gap: .75rem; }
+    .topbar-back-link {
+      font-size: .82rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .35rem .75rem;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      transition: all .15s;
+    }
+    .topbar-back-link:hover { background: var(--body-bg); color: var(--text-primary); }
+
+    .admin-content { padding: 1.75rem; flex: 1; }
+
+    /* ── STAT CARDS ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .stat-card-admin {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .stat-card-admin .stat-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.05rem;
+      margin-bottom: .75rem;
+    }
+    .stat-card-admin .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text-primary);
+    }
+    .stat-card-admin .stat-label {
+      font-size: .78rem;
+      color: var(--text-secondary);
+      margin-top: .2rem;
+    }
+    .stat-icon.amber { background: #fef3c7; color: #d97706; }
+    .stat-icon.blue  { background: #dbeafe; color: #2563eb; }
+    .stat-icon.green { background: #dcfce7; color: #16a34a; }
+    .stat-icon.purple{ background: #ede9fe; color: #7c3aed; }
+    .stat-icon.red   { background: #fee2e2; color: #dc2626; }
+    .stat-icon.teal  { background: #ccfbf1; color: #0d9488; }
+    .stat-icon.pink  { background: #fce7f3; color: #db2777; }
+    .stat-icon.indigo{ background: #e0e7ff; color: #4338ca; }
+
+    /* ── TABLES ── */
+    .admin-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .admin-card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+    .admin-card-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: .95rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .admin-table th {
+      background: #fafafa;
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--card-border);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .admin-table td {
+      padding: .75rem 1rem;
+      border-bottom: 1px solid #f3f4f6;
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: #fafbff; }
+
+    /* ── BADGES ── */
+    .role-badge {
+      display: inline-flex; align-items: center; gap: .3rem;
+      font-size: .72rem; font-weight: 600;
+      padding: 3px 9px; border-radius: 20px;
+    }
+    .role-badge.worker   { background: #dbeafe; color: #1d4ed8; }
+    .role-badge.customer { background: #dcfce7; color: #15803d; }
+    .role-badge.banned   { background: #fee2e2; color: #dc2626; }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: .3rem;
+      font-size: .72rem; font-weight: 600;
+      padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+    }
+    .status-pill.pending  { background: #fef9c3; color: #a16207; }
+    .status-pill.accepted { background: #dcfce7; color: #15803d; }
+    .status-pill.rejected { background: #fee2e2; color: #dc2626; }
+    .status-pill.open     { background: #dbeafe; color: #1d4ed8; }
+    .status-pill.closed   { background: #f3f4f6; color: #6b7280; }
+    .status-pill.completed{ background: #ccfbf1; color: #0d9488; }
+
+    .star-display { color: #f59e0b; font-size: .9rem; }
+
+    /* ── ACTION BUTTONS ── */
+    .btn-admin-sm {
+      font-size: .78rem; padding: .3rem .75rem;
+      border-radius: 7px; border: none; cursor: pointer;
+      font-weight: 500; text-decoration: none;
+      display: inline-flex; align-items: center; gap: .3rem;
+      transition: opacity .15s;
+    }
+    .btn-admin-sm:hover { opacity: .82; }
+    .btn-view    { background: #e0e7ff; color: #4338ca; }
+    .btn-ban     { background: #fee2e2; color: #dc2626; }
+    .btn-unban   { background: #dcfce7; color: #16a34a; }
+    .btn-delete  { background: #fef3c7; color: #92400e; }
+    .btn-outline-admin {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-secondary);
+      font-size: .82rem; padding: .35rem .8rem;
+      border-radius: 8px; cursor: pointer;
+      transition: all .15s; text-decoration: none;
+      display: inline-flex; align-items: center; gap: .35rem;
+    }
+    .btn-outline-admin:hover { background: var(--body-bg); color: var(--text-primary); }
+
+    /* ── FILTERS ── */
+    .filter-bar {
+      display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+    }
+    .filter-select, .filter-input {
+      font-size: .82rem; padding: .35rem .75rem;
+      border: 1px solid var(--card-border); border-radius: 8px;
+      background: var(--card-bg); color: var(--text-primary);
+      outline: none;
+    }
+    .filter-select:focus, .filter-input:focus { border-color: #a78bfa; }
+    .filter-input { min-width: 200px; }
+    .filter-btn {
+      font-size: .82rem; padding: .35rem .85rem;
+      border: none; border-radius: 8px;
+      background: #111827; color: #fff;
+      cursor: pointer; font-weight: 500;
+      display: inline-flex; align-items: center; gap: .35rem;
+      transition: opacity .15s;
+    }
+    .filter-btn:hover { opacity: .88; }
+
+    /* ── FLASH MESSAGES ── */
+    .admin-flash-wrap { padding: 0 1.75rem; margin-bottom: -.5rem; }
+    .admin-flash {
+      padding: .65rem 1rem; border-radius: 9px;
+      font-size: .85rem; margin-bottom: .6rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .admin-flash.success { background: #dcfce7; color: #15803d; }
+    .admin-flash.danger  { background: #fee2e2; color: #dc2626; }
+    .admin-flash.warning { background: #fef3c7; color: #92400e; }
+    .admin-flash.info    { background: #dbeafe; color: #1d4ed8; }
+
+    /* ── EMPTY STATE ── */
+    .admin-empty {
+      text-align: center; padding: 3rem 1rem;
+      color: var(--text-secondary);
+    }
+    .admin-empty i { font-size: 2.5rem; opacity: .3; margin-bottom: .5rem; display: block; }
+    .admin-empty p { font-size: .88rem; }
+
+    /* ── CHART CONTAINER ── */
+    .chart-container { padding: 1.25rem; }
+
+    /* ── USER DETAIL ── */
+    .detail-header {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1.25rem; border-bottom: 1px solid var(--card-border);
+    }
+    .detail-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.3rem;
+      color: #fff; flex-shrink: 0;
+    }
+    .detail-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+    .detail-meta { font-size: .82rem; color: var(--text-secondary); display: flex; gap: 1rem; flex-wrap: wrap; margin-top: .2rem; }
+    .detail-meta span { display: flex; align-items: center; gap: .25rem; }
+    .detail-body { padding: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .detail-field label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: .2rem; }
+    .detail-field span { font-size: .88rem; color: var(--text-primary); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .admin-sidebar { transform: translateX(-100%); }
+      .admin-main { margin-left: 0; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="admin-sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-label">
+      <span class="brand-icon"><i class="ph-fill ph-wrench" style="color:#000"></i></span>
+      LocalHelp
+    </div>
+    <span class="sidebar-admin-badge"><i class="ph ph-shield-star"></i> Admin Panel</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <span class="sidebar-section-label">Overview</span>
+    <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+      <i class="ph ph-squares-four"></i> Dashboard
+    </a>
+
+    <span class="sidebar-section-label">Manage</span>
+    <a href="{{ url_for('admin_users') }}" class="sidebar-link {% if 'admin_user' in request.endpoint %}active{% endif %}">
+      <i class="ph ph-users-three"></i> Users
+    </a>
+    <a href="{{ url_for('admin_jobs') }}" class="sidebar-link {% if request.endpoint == 'admin_jobs' %}active{% endif %}">
+      <i class="ph ph-briefcase"></i> Job Requests
+    </a>
+    <a href="{{ url_for('admin_posted_jobs') }}" class="sidebar-link {% if request.endpoint == 'admin_posted_jobs' %}active{% endif %}">
+      <i class="ph ph-clipboard-text"></i> Posted Jobs
+    </a>
+    <a href="{{ url_for('admin_ratings') }}" class="sidebar-link {% if request.endpoint == 'admin_ratings' %}active{% endif %}">
+      <i class="ph ph-star"></i> Ratings & Reviews
+    </a>
+    <a href="{{ url_for('admin_reports') }}" class="sidebar-link {% if request.endpoint == 'admin_reports' %}active{% endif %}">
+      <i class="ph ph-warning-octagon"></i> Reports & Flags
+    </a>
+
+    <span class="sidebar-section-label">Platform</span>
+    <a href="{{ url_for('index') }}" class="sidebar-link">
+      <i class="ph ph-arrow-square-out"></i> Back to Site
+    </a>
+    <a href="{{ url_for('logout') }}" class="sidebar-link" style="color:#ef4444">
+      <i class="ph ph-sign-out"></i> Logout
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-avatar">{{ session['full_name'][0].upper() }}</div>
+    <div>
+      <div class="sidebar-footer-name">{{ session['full_name'] }}</div>
+      <div class="sidebar-footer-role">Super Admin</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="admin-main">
+  <div class="admin-topbar">
+    <div class="admin-topbar-title">
+      {% block page_title %}Dashboard{% endblock %}
+      <small>{% block page_subtitle %}{% endblock %}</small>
+    </div>
+    <div class="topbar-actions">
+      {% block topbar_actions %}{% endblock %}
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="admin-flash-wrap" style="padding-top:1rem">
+      {% for cat, msg in messages %}
+      <div class="admin-flash {{ cat }}">
+        <i class="ph ph-{% if cat == 'success' %}check-circle{% elif cat == 'danger' %}x-circle{% elif cat == 'warning' %}warning{% else %}info{% endif %}-fill"></i>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="admin-content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

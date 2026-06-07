@@ -1,0 +1,91 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Job Requests — Admin{% endblock %}
+{% block page_title %}Job Requests{% endblock %}
+{% block page_subtitle %}{{ jobs | length }} result(s){% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <div class="admin-card-header">
+    <span class="admin-card-title"><i class="ph ph-briefcase"></i> All Job Requests</span>
+    <form method="GET" class="filter-bar">
+      <input type="text" name="search" class="filter-input" placeholder="Customer, worker, category…" value="{{ search }}" style="min-width:180px">
+      <select name="status" class="filter-select">
+        <option value="">All statuses</option>
+        <option value="pending"  {% if status_filter == 'pending'  %}selected{% endif %}>Pending</option>
+        <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+      </select>
+      <select name="stage" class="filter-select">
+        <option value="">All stages</option>
+        <option value="accepted"    {% if stage_filter == 'accepted'    %}selected{% endif %}>Accepted</option>
+        <option value="on_the_way"  {% if stage_filter == 'on_the_way'  %}selected{% endif %}>On the Way</option>
+        <option value="arrived"     {% if stage_filter == 'arrived'     %}selected{% endif %}>Arrived</option>
+        <option value="in_progress" {% if stage_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="completed"   {% if stage_filter == 'completed'   %}selected{% endif %}>Completed</option>
+      </select>
+      <button type="submit" class="filter-btn"><i class="ph ph-magnifying-glass"></i> Filter</button>
+      {% if search or status_filter or stage_filter %}
+      <a href="{{ url_for('admin_jobs') }}" class="btn-outline-admin">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if jobs %}
+  <div style="overflow-x:auto">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer</th>
+          <th>Worker</th>
+          <th>Category</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th>Stage</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for j in jobs %}
+        <tr>
+          <td style="color:var(--text-muted);font-size:.78rem">
+            <span style="font-family:monospace;background:#eef2ff;color:#4338ca;padding:.1rem .4rem;border-radius:5px;font-size:.72rem;font-weight:700">{{ j.request_code or ('#'+j.id|string) }}</span>
+          </td>
+          <td>
+            <div style="font-weight:500;font-size:.85rem">{{ j.customer_name }}</div>
+            <div style="font-size:.72rem;color:var(--text-muted);font-family:monospace">{{ j.customer_phone }}</div>
+          </td>
+          <td>
+            <div style="font-weight:500;font-size:.85rem">{{ j.worker_name }}</div>
+            <div style="font-size:.72rem;color:var(--text-muted);font-family:monospace">{{ j.worker_phone }}</div>
+          </td>
+          <td style="font-size:.82rem;color:var(--text-secondary)">{{ j.category or '—' }}</td>
+          <td style="font-size:.8rem;color:var(--text-secondary)">
+            {{ j.location[:22] }}{% if j.location|length > 22 %}…{% endif %}
+          </td>
+          <td><span class="status-pill {{ j.status }}">{{ j.status | capitalize }}</span></td>
+          <td>
+            {% if j.job_stage %}
+            <span class="status-pill {{ j.job_stage }}">
+              {{ j.job_stage | replace('_',' ') | capitalize }}
+            </span>
+            {% else %}
+            <span style="font-size:.78rem;color:var(--text-muted)">—</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.8rem;color:var(--text-secondary);white-space:nowrap">
+            {{ j.created_at.strftime('%d %b %Y') }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="admin-empty">
+    <i class="ph ph-briefcase"></i>
+    <p>No job requests found{% if search %} for "{{ search }}"{% endif %}.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

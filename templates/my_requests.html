@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}My Requests — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-wrap{max-width:860px;margin:0 auto;padding:2rem 1rem 3rem}
+.page-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem}
+.page-header h1{font-size:1.4rem;font-weight:800;color:#1e1b4b;margin:0}
+.filter-tabs{display:flex;gap:.4rem;flex-wrap:wrap}
+.ftab{padding:.38rem .85rem;border-radius:8px;font-size:.8rem;font-weight:600;text-decoration:none;border:1.5px solid #e5e7eb;color:#6b7280;background:#fff;transition:all .2s}
+.ftab.active,.ftab:hover{background:#eef2ff;border-color:#6366f1;color:#4338ca}
+.req-card{background:#fff;border-radius:16px;padding:1.2rem 1.4rem;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f0f0f5;margin-bottom:1rem;transition:transform .15s}
+.req-card:hover{transform:translateY(-1px)}
+.req-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.7rem}
+.req-left{display:flex;align-items:center;gap:.85rem}
+.req-av{width:42px;height:42px;border-radius:50%;background:#e0e7ff;color:#6366f1;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.req-av img{width:100%;height:100%;object-fit:cover}
+.req-worker{font-weight:700;font-size:.95rem;color:#1e1b4b}
+.req-code{display:inline-block;font-family:monospace;background:#eef2ff;color:#4338ca;padding:.12rem .5rem;border-radius:6px;font-size:.72rem;font-weight:700;margin-left:.4rem}
+.req-skills{font-size:.74rem;color:#6b7280;margin-top:.15rem}
+.status-pill{font-size:.73rem;font-weight:700;padding:.28rem .75rem;border-radius:999px;white-space:nowrap}
+.pill-pending{background:#fffbeb;color:#92400e}
+.pill-accepted{background:#ecfdf5;color:#065f46}
+.pill-rejected{background:#fef2f2;color:#991b1b}
+.pill-completed{background:#f0fdf4;color:#166534}
+.req-details{font-size:.82rem;color:#374151;margin-bottom:.6rem;border-left:3px solid #e0e7ff;padding-left:.7rem}
+.req-meta-row{display:flex;flex-wrap:wrap;gap:.85rem;font-size:.75rem;color:#6b7280;margin-bottom:.8rem}
+.req-meta-row span{display:flex;align-items:center;gap:.25rem}
+.req-actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.btn-sm{display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .85rem;border-radius:8px;font-size:.78rem;font-weight:700;text-decoration:none;border:none;cursor:pointer;transition:opacity .15s}
+.btn-sm:hover{opacity:.85}
+.btn-track{background:#6366f1;color:#fff}
+.btn-chat{background:#10b981;color:#fff}
+.btn-rate{background:#f59e0b;color:#fff}
+.btn-view{background:#f3f4f6;color:#374151}
+/* Stage bar */
+.stage-bar{display:flex;align-items:center;gap:.3rem;margin:.6rem 0;flex-wrap:wrap}
+.stage-step{font-size:.68rem;padding:.18rem .55rem;border-radius:999px;background:#f3f4f6;color:#9ca3af;font-weight:600;white-space:nowrap}
+.stage-step.done{background:#d1fae5;color:#065f46}
+.stage-step.current{background:#6366f1;color:#fff}
+.empty-state{text-align:center;padding:3rem 1rem;color:#9ca3af}
+.empty-state i{font-size:3rem;color:#d1d5db;margin-bottom:.5rem}
+.empty-state h3{font-size:1rem;font-weight:600;margin:.5rem 0 .3rem}
+.empty-state p{font-size:.82rem;margin:0}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="page-header">
+    <h1><i class="ph ph-list-checks" style="color:#6366f1"></i> My Requests</h1>
+    <div class="filter-tabs">
+      <a href="{{ url_for('my_requests') }}" class="ftab {% if not status_filter %}active{% endif %}">All</a>
+      <a href="{{ url_for('my_requests', status='pending') }}" class="ftab {% if status_filter=='pending' %}active{% endif %}">Pending</a>
+      <a href="{{ url_for('my_requests', status='accepted') }}" class="ftab {% if status_filter=='accepted' %}active{% endif %}">Accepted</a>
+      <a href="{{ url_for('my_requests', status='rejected') }}" class="ftab {% if status_filter=='rejected' %}active{% endif %}">Rejected</a>
+    </div>
+  </div>
+
+  {% if requests %}
+    {% for req in requests %}
+    <div class="req-card">
+      <div class="req-top-row">
+        <div class="req-left">
+          <div class="req-av">
+            {% if req.worker_avatar %}<img src="{{ req.worker_avatar }}" alt="">{% else %}{{ req.worker_name[0].upper() }}{% endif %}
+          </div>
+          <div>
+            <div>
+              <span class="req-worker">{{ req.worker_name }}</span>
+              <span class="req-code">{{ req.request_code or ('#'+req.id|string) }}</span>
+            </div>
+            {% if req.worker_skills %}
+            <div class="req-skills"><i class="ph ph-wrench"></i> {{ req.worker_skills.split(',')[0].strip() }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <span class="status-pill {% if req.job_stage == 'completed' %}pill-completed{% elif req.status == 'pending' %}pill-pending{% elif req.status == 'accepted' %}pill-accepted{% else %}pill-rejected{% endif %}">
+          {% if req.job_stage == 'completed' %}✓ Completed{% elif req.status == 'pending' %}⏳ Pending{% elif req.status == 'accepted' %}✓ Active{% else %}✗ Rejected{% endif %}
+        </span>
+      </div>
+
+      <div class="req-details">{{ req.description[:120] }}{% if req.description|length > 120 %}…{% endif %}</div>
+
+      <div class="req-meta-row">
+        <span><i class="ph ph-map-pin"></i> {{ req.location }}</span>
+        {% if req.category %}<span><i class="ph ph-tag"></i> {{ req.category }}</span>{% endif %}
+        {% if req.scheduled_at %}<span><i class="ph ph-calendar"></i> {{ req.scheduled_at.strftime('%d %b %Y') }}</span>{% endif %}
+        <span><i class="ph ph-clock"></i> {{ req.created_at.strftime('%d %b %Y') }}</span>
+      </div>
+
+      <!-- Price negotiation status for customer -->
+      {% if req.customer_budget %}
+      <div style="background:#f8fafc;border:1px solid #e0e7ff;border-radius:10px;padding:.6rem .9rem;margin-bottom:.6rem;font-size:.8rem">
+        <span style="font-weight:700;color:#374151"><i class="ph ph-currency-inr" style="color:#6366f1"></i> Your Budget: <span style="color:#10b981">₹{{ '%.0f'|format(req.customer_budget) }}</span></span>
+        {% if req.price_status == 'agreed' %}
+          <span style="margin-left:.75rem;background:#d1fae5;color:#065f46;font-size:.72rem;font-weight:700;padding:.18rem .55rem;border-radius:999px"><i class="ph ph-handshake"></i> Price Agreed ✓</span>
+        {% elif req.price_status == 'countered' and req.worker_counter %}
+          <span style="margin-left:.75rem;color:#f59e0b;font-weight:700"><i class="ph ph-arrows-counter-clockwise"></i> Worker Counter: ₹{{ '%.0f'|format(req.worker_counter) }}</span>
+          <div style="margin-top:.5rem;display:flex;gap:.4rem;flex-wrap:wrap">
+            <form method="POST" action="{{ url_for('customer_price_response', req_id=req.id) }}" style="display:inline">
+              <input type="hidden" name="action" value="accept">
+              <button type="submit" class="btn-sm" style="background:#10b981;color:#fff;font-size:.73rem;padding:.28rem .7rem">
+                <i class="ph ph-check"></i> Accept ₹{{ '%.0f'|format(req.worker_counter) }}
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('customer_price_response', req_id=req.id) }}" style="display:inline">
+              <input type="hidden" name="action" value="reject">
+              <button type="submit" class="btn-sm" style="background:#ef4444;color:#fff;font-size:.73rem;padding:.28rem .7rem">
+                <i class="ph ph-x"></i> Reject Counter
+              </button>
+            </form>
+          </div>
+        {% else %}
+          <span style="margin-left:.75rem;color:#9ca3af;font-size:.74rem">Awaiting worker response</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Stage bar for accepted -->
+      {% if req.status == 'accepted' and req.job_stage %}
+      <div class="stage-bar">
+        {% for stage in STAGE_ORDER %}
+        {% set idx = STAGE_ORDER.index(stage) %}
+        {% set cur_idx = STAGE_ORDER.index(req.job_stage) if req.job_stage in STAGE_ORDER else 0 %}
+        <span class="stage-step {% if idx < cur_idx %}done{% elif idx == cur_idx %}current{% endif %}">
+          {{ STAGE_LABELS[stage]|replace('Worker ','') }}
+        </span>
+        {% if not loop.last %}<i class="ph ph-caret-right" style="font-size:.6rem;color:#d1d5db"></i>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="req-actions">
+        <a href="{{ url_for('view_worker', worker_id=req.worker_id) }}" class="btn-sm btn-view">
+          <i class="ph ph-user"></i> Profile
+        </a>
+        {% if req.status == 'accepted' and req.job_stage != 'completed' %}
+        <a href="{{ url_for('track_job', req_id=req.id) }}" class="btn-sm btn-track">
+          <i class="ph ph-navigation-arrow"></i> Track
+        </a>
+        <a href="{{ url_for('chat', req_id=req.id) }}" class="btn-sm btn-chat">
+          <i class="ph ph-chat-circle"></i> Chat
+        </a>
+        {% endif %}
+        {% if req.job_stage == 'completed' and not req.rating_id %}
+        <a href="{{ url_for('rate_worker', req_id=req.id) }}" class="btn-sm btn-rate">
+          <i class="ph ph-star"></i> Rate Worker
+        </a>
+        {% elif req.rating_id %}
+        <span class="btn-sm" style="background:#f0fdf4;color:#166534;cursor:default">
+          <i class="ph ph-star-fill"></i> Rated {{ req.my_rating }}/5
+        </span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <div><i class="ph ph-clipboard-text"></i></div>
+    <h3>No requests found</h3>
+    <p>{% if status_filter %}No {{ status_filter }} requests.{% else %}Start by finding a worker!{% endif %}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

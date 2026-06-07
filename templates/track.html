@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% block title %}Track {{ req.request_code or ('Job #'~req.id) }} — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ══════════════════════════════════════════
+   TRACK PAGE
+══════════════════════════════════════════ */
+.track-page {
+  min-height: calc(100vh - 70px);
+  background: var(--slate-50);
+  padding: 2rem 1rem 4rem;
+}
+.track-container {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+/* ── Header card ── */
+.track-header-card {
+  background: linear-gradient(135deg, #4338ca 0%, #7c3aed 100%);
+  border-radius: 18px;
+  padding: 1.6rem 1.8rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  box-shadow: 0 8px 30px rgba(99,102,241,.3);
+}
+.track-header-icon {
+  width: 56px; height: 56px;
+  background: rgba(255,255,255,.15);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.7rem;
+  flex-shrink: 0;
+}
+.track-header-info { flex: 1; }
+.track-header-info h1 { font-size: 1.2rem; font-weight: 800; margin: 0 0 .25rem; }
+.track-header-info p  { font-size: .85rem; opacity: .8; margin: 0; }
+.track-live-pill {
+  display: flex; align-items: center; gap: .4rem;
+  background: rgba(255,255,255,.15);
+  border-radius: 20px; padding: .35rem .8rem;
+  font-size: .78rem; font-weight: 600;
+  flex-shrink: 0;
+}
+.track-live-pill .blink {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4ade80;
+  animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Worker info card ── */
+.worker-info-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  border: 1px solid #e8eaf0;
+}
+.wi-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white; font-size: 1.3rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.wi-body { flex: 1; }
+.wi-name { font-weight: 700; font-size: 1rem; color: #1e1b4b; }
+.wi-meta { font-size: .8rem; color: #6b7280; margin-top: 2px; display: flex; gap: .8rem; flex-wrap: wrap; }
+.wi-badge-row { margin-top: .4rem; }
+.wi-phone-btn {
+  display: flex; align-items: center; gap: .4rem;
+  background: #eef2ff; color: #4338ca;
+  border-radius: 8px; padding: .45rem .9rem;
+  text-decoration: none; font-size: .82rem; font-weight: 600;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.wi-phone-btn:hover { background: #e0e7ff; color: #3730a3; text-decoration: none; }
+
+/* ── Stage Timeline ── */
+.stage-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.4rem 1.6rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  border: 1px solid #e8eaf0;
+}
+.stage-card-title {
+  font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .6px; color: #9ca3af; margin-bottom: 1.4rem;
+  display: flex; align-items: center; gap: .4rem;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.tl-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+}
+.tl-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 19px; top: 42px;
+  width: 2px; height: calc(100% - 10px);
+  background: #e5e7eb;
+  z-index: 0;
+}
+.tl-step.done:not(:last-child)::after { background: #6366f1; }
+.tl-step.active:not(:last-child)::after { background: #e5e7eb; }
+
+.tl-dot {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+  transition: all .3s;
+}
+.tl-step.done .tl-dot {
+  background: #6366f1; color: white;
+  box-shadow: 0 0 0 4px #eef2ff;
+}
+.tl-step.active .tl-dot {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  color: white;
+  box-shadow: 0 0 0 4px #eef2ff, 0 4px 16px rgba(99,102,241,.4);
+  animation: pulse-dot 1.8s ease infinite;
+}
+.tl-step.pending .tl-dot {
+  background: #f3f4f6; color: #9ca3af;
+  border: 2px solid #e5e7eb;
+}
+@keyframes pulse-dot {
+  0%,100% { box-shadow: 0 0 0 4px #eef2ff, 0 4px 16px rgba(99,102,241,.4); }
+  50%      { box-shadow: 0 0 0 8px #eef2ff, 0 4px 24px rgba(99,102,241,.5); }
+}
+
+.tl-body { padding: .6rem 0 1.4rem; }
+.tl-label {
+  font-size: .9rem; font-weight: 600;
+  color: #1e1b4b;
+}
+.tl-step.done .tl-label { color: #6366f1; }
+.tl-step.active .tl-label { color: #4338ca; }
+.tl-step.pending .tl-label { color: #9ca3af; }
+.tl-sub { font-size: .76rem; color: #9ca3af; margin-top: 2px; }
+.tl-step.active .tl-sub { color: #6b7280; }
+
+/* ── Current stage banner ── */
+.current-stage-banner {
+  background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+  border: 1.5px solid #c7d2fe;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  margin-bottom: 1.2rem;
+}
+.csb-icon {
+  width: 44px; height: 44px;
+  background: #6366f1; color: white;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.csb-body { flex: 1; }
+.csb-label { font-weight: 700; font-size: .95rem; color: #3730a3; }
+.csb-time  { font-size: .75rem; color: #6b7280; margin-top: 1px; }
+
+/* Completed state */
+.completed-banner {
+  background: linear-gradient(135deg, #dcfce7, #d1fae5);
+  border: 1.5px solid #86efac;
+  border-radius: 14px;
+  padding: 1.4rem 1.6rem;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(16,185,129,.12);
+}
+.completed-banner i { font-size: 2.5rem; color: #16a34a; display: block; margin-bottom: .5rem; }
+.completed-banner h3 { color: #15803d; font-size: 1.1rem; font-weight: 700; margin: 0 0 .3rem; }
+.completed-banner p { color: #166534; font-size: .85rem; margin: 0; }
+
+/* Rate button */
+.btn-rate-now {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white; font-weight: 700; font-size: .95rem;
+  padding: .75rem 1.6rem; border-radius: 12px;
+  text-decoration: none; margin-top: 1rem;
+  box-shadow: 0 4px 14px rgba(245,158,11,.35);
+  transition: transform .15s, box-shadow .15s;
+}
+.btn-rate-now:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245,158,11,.45);
+  color: white; text-decoration: none;
+}
+
+/* Job details card */
+.job-detail-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  border: 1px solid #e8eaf0;
+}
+.jd-title { font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .6px; color: #9ca3af; margin-bottom: .9rem; }
+.jd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.jd-item label { display: block; font-size: .72rem; color: #9ca3af; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+.jd-item p { font-size: .88rem; color: #374151; font-weight: 500; margin: 0; }
+.jd-item.full { grid-column: 1 / -1; }
+
+@media (max-width: 500px) {
+  .jd-grid { grid-template-columns: 1fr; }
+  .jd-item.full { grid-column: 1; }
+  .track-live-pill { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="track-page">
+  <div class="track-container">
+
+    <!-- Header -->
+    <div class="track-header-card">
+      <div class="track-header-icon"><i class="ph-fill ph-navigation-arrow"></i></div>
+      <div class="track-header-info">
+        <h1>Live Job Tracker</h1>
+        <p>{{ req.request_code or ('Job #'~req.id) }} · Updates every few seconds</p>
+      </div>
+      <div class="track-live-pill">
+        <span class="blink"></span> Live
+      </div>
+    </div>
+
+    <!-- Worker Card -->
+    <div class="worker-info-card">
+      <div class="wi-avatar">{{ req.worker_name[0].upper() }}</div>
+      <div class="wi-body">
+        <div class="wi-name">{{ req.worker_name }}</div>
+        <div class="wi-meta">
+          {% if req.worker_skills %}<span><i class="ph ph-wrench"></i> {{ req.worker_skills.split(',')[0].strip() }}</span>{% endif %}
+          {% if req.worker_location %}<span><i class="ph ph-map-pin"></i> {{ req.worker_location }}</span>{% endif %}
+        </div>
+        <div class="wi-badge-row">
+          {% set b = badge %}
+          <span class="worker-badge {{ b.cls }}" style="--badge-color:{{ b.color }}">
+            <i class="ph-fill {{ b.icon }}"></i> {{ b.label }}
+          </span>
+          {% if wstats.avg_rating %}
+          <span class="wi-rating-inline">
+            <i class="ph-fill ph-star" style="color:#f59e0b"></i>
+            {{ wstats.avg_rating }}/5 · {{ wstats.total_completed }} job{% if wstats.total_completed != 1 %}s{% endif %}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <a href="tel:{{ req.worker_phone }}" class="wi-phone-btn">
+        <i class="ph-fill ph-phone"></i> Call
+      </a>
+    </div>
+
+    <!-- Stage Timeline -->
+    <div class="stage-card">
+      <div class="stage-card-title"><i class="ph ph-clock-countdown"></i> Job Progress</div>
+
+      {% set cur_stage = req.job_stage or 'accepted' %}
+      {% set cur_idx   = STAGE_ORDER.index(cur_stage) %}
+
+      <!-- Completed state -->
+      {% if cur_stage == 'completed' %}
+      <div class="completed-banner">
+        <i class="ph-fill ph-seal-check"></i>
+        <h3>Job Successfully Completed! 🎉</h3>
+        <p>Great news! {{ req.worker_name.split()[0] }} has finished the work.</p>
+        {% if not req.rating_id %}
+        <a href="{{ url_for('rate_worker', req_id=req.id) }}" class="btn-rate-now">
+          <i class="ph-fill ph-star"></i> Rate & Review {{ req.worker_name.split()[0] }}
+        </a>
+        {% else %}
+        <p style="margin-top:.8rem;color:#16a34a;font-weight:600"><i class="ph-fill ph-check-circle"></i> You've already rated this job</p>
+        {% endif %}
+      </div>
+      {% else %}
+      <!-- Active tracking -->
+      <div class="current-stage-banner" id="stageBanner">
+        <div class="csb-icon"><i class="ph-fill {{ STAGE_ICONS[cur_stage] }}"></i></div>
+        <div class="csb-body">
+          <div class="csb-label" id="stageLabel">{{ STAGE_LABELS[cur_stage] }}</div>
+          <div class="csb-time" id="stageTime">
+            {% if req.stage_updated_at %}Updated {{ req.stage_updated_at.strftime('%I:%M %p') }}{% else %}Just now{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Timeline steps -->
+      <div class="timeline" id="timeline">
+        {% for stage in STAGE_ORDER %}
+          {% set idx = loop.index0 %}
+          {% if idx < cur_idx %}
+            {% set step_cls = 'done' %}
+          {% elif idx == cur_idx %}
+            {% set step_cls = 'active' %}
+          {% else %}
+            {% set step_cls = 'pending' %}
+          {% endif %}
+          <div class="tl-step {{ step_cls }}" data-stage="{{ stage }}" data-idx="{{ idx }}">
+            <div class="tl-dot">
+              {% if idx < cur_idx %}
+                <i class="ph-fill ph-check"></i>
+              {% else %}
+                <i class="ph-fill {{ STAGE_ICONS[stage] }}"></i>
+              {% endif %}
+            </div>
+            <div class="tl-body">
+              <div class="tl-label">{{ STAGE_LABELS[stage] }}</div>
+              <div class="tl-sub">
+                {% if idx < cur_idx %}Completed
+                {% elif idx == cur_idx and stage != 'completed' %}In progress…
+                {% elif stage == 'completed' and idx == cur_idx %}Done!
+                {% else %}Upcoming{% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Job Details -->
+    <div class="job-detail-card">
+      <div class="jd-title"><i class="ph ph-info"></i> Job Details</div>
+      <div class="jd-grid">
+        <div class="jd-item full">
+          <label>Description</label>
+          <p>{{ req.description }}</p>
+        </div>
+        <div class="jd-item">
+          <label>Location</label>
+          <p>{{ req.location }}</p>
+        </div>
+        {% if req.category %}
+        <div class="jd-item">
+          <label>Category</label>
+          <p>{{ req.category }}</p>
+        </div>
+        {% endif %}
+        <div class="jd-item">
+          <label>Requested On</label>
+          <p>{{ req.created_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+        </div>
+        <div class="jd-item">
+          <label>Worker Phone</label>
+          <p>{{ req.worker_phone }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Back + Chat buttons -->
+    <div style="display:flex;gap:.8rem;flex-wrap:wrap">
+      <a href="{{ url_for('my_requests') }}" class="btn-back" style="padding:.65rem 1.2rem">
+        <i class="ph ph-arrow-left"></i> My Requests
+      </a>
+      <a href="{{ url_for('chat', req_id=req.id) }}" class="btn-open-chat">
+        <i class="ph-fill ph-chat-circle-dots"></i> Chat with Worker
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  const REQ_ID    = {{ req.id }};
+  const POLL_URL  = `/api/track/${REQ_ID}`;
+  const STAGES    = {{ STAGE_ORDER | tojson }};
+  const LABELS    = {{ STAGE_LABELS | tojson }};
+  const ICONS     = {{ STAGE_ICONS | tojson }};
+
+  let currentStage = {{ (req.job_stage or 'accepted') | tojson }};
+
+  function updateUI(stage, label, timeStr, stageIdx) {
+    if (stage === currentStage) return;
+    currentStage = stage;
+
+    // Update banner
+    const banner    = document.getElementById('stageBanner');
+    const stageLabel= document.getElementById('stageLabel');
+    const stageTime = document.getElementById('stageTime');
+
+    if (stage === 'completed') {
+      // Reload page to show completed state
+      window.location.reload();
+      return;
+    }
+
+    if (banner) {
+      stageLabel.textContent = label;
+      stageTime.textContent  = timeStr ? 'Updated ' + timeStr : 'Just now';
+      banner.querySelector('.csb-icon i').className = `ph-fill ${ICONS[stage]}`;
+    }
+
+    // Update timeline steps
+    document.querySelectorAll('.tl-step').forEach(step => {
+      const idx = parseInt(step.dataset.idx);
+      const stepStage = step.dataset.stage;
+      step.classList.remove('done', 'active', 'pending');
+
+      const dotIcon = step.querySelector('.tl-dot i');
+      const sub     = step.querySelector('.tl-sub');
+
+      if (idx < stageIdx) {
+        step.classList.add('done');
+        dotIcon.className = 'ph-fill ph-check';
+        sub.textContent   = 'Completed';
+      } else if (idx === stageIdx) {
+        step.classList.add('active');
+        dotIcon.className = `ph-fill ${ICONS[stepStage]}`;
+        sub.textContent   = 'In progress…';
+      } else {
+        step.classList.add('pending');
+        dotIcon.className = `ph-fill ${ICONS[stepStage]}`;
+        sub.textContent   = 'Upcoming';
+      }
+    });
+  }
+
+  async function poll() {
+    try {
+      const res  = await fetch(POLL_URL);
+      const data = await res.json();
+      if (data.stage) {
+        updateUI(data.stage, data.label, data.updated, data.stage_index);
+      }
+    } catch(e) { /* silent */ }
+  }
+
+  setInterval(poll, 4000);
+})();
+</script>
+{% endblock %}

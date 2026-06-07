@@ -1,0 +1,85 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Reports — Admin{% endblock %}
+{% block page_title %}Reports & Flags{% endblock %}
+{% block page_subtitle %}User-submitted safety reports{% endblock %}
+
+{% block content %}
+<!-- Filter tabs -->
+<div style="display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap">
+  {% for s,label,color in [('pending','Pending','#f59e0b'),('reviewed','Approved / Banned','#16a34a'),('dismissed','Dismissed','#6b7280')] %}
+  <a href="?status={{ s }}"
+     style="padding:.45rem 1rem;border-radius:20px;font-size:.82rem;font-weight:600;text-decoration:none;
+            background:{{ '#fff' if status_filter==s else '#f3f4f6' }};
+            color:{{ color if status_filter==s else '#6b7280' }};
+            box-shadow:{{ '0 1px 4px rgba(0,0,0,.12)' if status_filter==s else 'none' }};border:1px solid {{ color if status_filter==s else '#e5e7eb' }}">
+    {{ label }}{% if s=='pending' and pending_count %} <span style="background:{{ color }};color:#fff;border-radius:20px;padding:1px 6px;margin-left:.3rem;font-size:.68rem">{{ pending_count }}</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+{% if reports %}
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>#</th><th>Reporter</th><th>Reported User</th><th>Reason</th>
+        <th>Details</th><th>Date</th><th>Status</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reports %}
+      <tr>
+        <td style="color:#9ca3af;font-size:.78rem">#{{ r.id }}</td>
+        <td>
+          <div style="font-weight:600;font-size:.85rem">{{ r.reporter_name }}</div>
+          <div style="font-size:.72rem;color:#9ca3af">{{ r.reporter_phone }}</div>
+        </td>
+        <td>
+          <div style="font-weight:600;font-size:.85rem">{{ r.reported_name }}</div>
+          <div style="font-size:.72rem;color:#9ca3af">{{ r.reported_phone }}</div>
+          {% if r.is_banned %}<span class="role-badge banned" style="margin-top:.2rem">Banned</span>{% endif %}
+        </td>
+        <td><span style="font-size:.8rem;font-weight:600;color:#374151">{{ r.reason }}</span></td>
+        <td style="max-width:200px;font-size:.78rem;color:#6b7280">
+          {% if r.details %}{{ r.details[:80] }}{% if r.details|length > 80 %}…{% endif %}{% else %}<em style="color:#d1d5db">—</em>{% endif %}
+        </td>
+        <td style="font-size:.78rem;color:#9ca3af;white-space:nowrap">{{ r.created_at.strftime('%d %b %Y') }}</td>
+        <td>
+          <span class="status-pill {{ r.status }}">
+            {{ r.status | capitalize }}
+          </span>
+        </td>
+        <td>
+          {% if r.status == 'pending' %}
+          <div style="display:flex;gap:.4rem">
+            <form method="POST" action="{{ url_for('admin_report_action', report_id=r.id) }}"
+                  onsubmit="return confirm('Approve report and BAN {{ r.reported_name }}?')">
+              <input type="hidden" name="action" value="approve">
+              <button class="btn-admin-sm btn-ban" type="submit">
+                <i class="ph ph-check"></i> Approve & Ban
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('admin_report_action', report_id=r.id) }}">
+              <input type="hidden" name="action" value="dismiss">
+              <button class="btn-admin-sm" type="submit"
+                style="background:#f3f4f6;color:#6b7280">
+                <i class="ph ph-x"></i> Dismiss
+              </button>
+            </form>
+          </div>
+          {% else %}
+          <span style="font-size:.75rem;color:#9ca3af">No action</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="admin-empty">
+  <i class="ph ph-flag"></i>
+  <p>No {{ status_filter }} reports found.</p>
+</div>
+{% endif %}
+{% endblock %}

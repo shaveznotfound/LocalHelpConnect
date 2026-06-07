@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Customer Dashboard — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<style>
+.db-page{min-height:calc(100vh - 70px);background:#f4f6fb;padding:2rem 1rem 3rem}
+.db-wrap{max-width:1100px;margin:0 auto}
+/* Header */
+.db-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem}
+.db-header-left{display:flex;align-items:center;gap:1rem}
+.db-user-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid #e0e7ff;flex-shrink:0}
+.db-user-initials{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:1.4rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.db-greeting{font-size:1.45rem;font-weight:800;color:#1e1b4b;margin:0}
+.db-sub{font-size:.85rem;color:#6b7280;margin:.2rem 0 0}
+.db-header-actions{display:flex;gap:.6rem;flex-wrap:wrap}
+.btn-db-primary{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;border-radius:10px;font-weight:700;font-size:.85rem;text-decoration:none;transition:opacity .2s}
+.btn-db-primary:hover{opacity:.88;color:#fff}
+.btn-db-outline{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;background:#fff;color:#6366f1;border:1.5px solid #6366f1;border-radius:10px;font-weight:700;font-size:.85rem;text-decoration:none;transition:all .2s}
+.btn-db-outline:hover{background:#eef2ff;color:#6366f1}
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:2rem}
+.scard{background:#fff;border-radius:16px;padding:1.2rem 1.3rem;display:flex;align-items:center;gap:1rem;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f0f0f5;transition:transform .2s}
+.scard:hover{transform:translateY(-2px)}
+.scard-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.sc-total .scard-icon{background:#eef2ff;color:#6366f1}
+.sc-pending .scard-icon{background:#fffbeb;color:#f59e0b}
+.sc-active .scard-icon{background:#ecfdf5;color:#10b981}
+.sc-done .scard-icon{background:#f0fdf4;color:#16a34a}
+.sc-posted .scard-icon{background:#fdf4ff;color:#a21caf}
+.scard-body{}
+.scard-num{display:block;font-size:1.7rem;font-weight:800;color:#1e1b4b;line-height:1}
+.scard-label{font-size:.75rem;color:#6b7280;font-weight:500;margin-top:.2rem}
+/* Two-col layout */
+.db-grid{display:grid;grid-template-columns:1fr 360px;gap:1.5rem;align-items:start}
+@media(max-width:900px){.db-grid{grid-template-columns:1fr}}
+/* Section card */
+.db-card{background:#fff;border-radius:18px;padding:1.4rem;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f0f0f5;margin-bottom:1.5rem}
+.db-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.db-card-title{font-size:1rem;font-weight:700;color:#1e1b4b;display:flex;align-items:center;gap:.5rem}
+.db-card-link{font-size:.8rem;color:#6366f1;font-weight:600;text-decoration:none}
+.db-card-link:hover{text-decoration:underline}
+/* Request list */
+.req-item{display:flex;align-items:flex-start;gap:.85rem;padding:.85rem 0;border-bottom:1px solid #f3f4f6}
+.req-item:last-child{border-bottom:none;padding-bottom:0}
+.req-av{width:38px;height:38px;border-radius:50%;background:#e0e7ff;color:#6366f1;font-size:.95rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.req-av img{width:100%;height:100%;object-fit:cover}
+.req-body{flex:1;min-width:0}
+.req-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.2rem}
+.req-name{font-weight:600;font-size:.88rem;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.req-code{font-size:.68rem;font-family:monospace;background:#eef2ff;color:#4338ca;padding:.1rem .4rem;border-radius:5px;font-weight:600;white-space:nowrap}
+.req-desc{font-size:.78rem;color:#6b7280;margin-bottom:.25rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.req-meta-row{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.req-meta-row span{font-size:.72rem;color:#9ca3af;display:flex;align-items:center;gap:.2rem}
+.status-pill{font-size:.68rem;font-weight:700;padding:.18rem .6rem;border-radius:999px;white-space:nowrap}
+.pill-pending{background:#fffbeb;color:#92400e}
+.pill-accepted{background:#ecfdf5;color:#065f46}
+.pill-rejected{background:#fef2f2;color:#991b1b}
+.pill-completed{background:#f0fdf4;color:#166534}
+/* Quick links */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.quick-card{display:flex;flex-direction:column;align-items:flex-start;gap:.3rem;padding:1rem;background:#f8f9ff;border:1.5px solid #e8eaf0;border-radius:14px;text-decoration:none;transition:all .2s}
+.quick-card:hover{background:#eef2ff;border-color:#c7d2fe;transform:translateY(-1px)}
+.quick-card i{font-size:1.4rem;color:#6366f1}
+.quick-card span{font-size:.82rem;font-weight:600;color:#1f2937}
+/* Empty */
+.empty-box{text-align:center;padding:2rem 1rem;color:#9ca3af}
+.empty-box i{font-size:2.5rem;color:#d1d5db;margin-bottom:.5rem}
+.empty-box p{font-size:.82rem;margin:.4rem 0 1rem}
+/* Timeline widget */
+.timeline-list{list-style:none;padding:0;margin:0}
+.tl-item{display:flex;gap:.75rem;align-items:flex-start;padding:.55rem 0;border-bottom:1px solid #f3f4f6}
+.tl-item:last-child{border-bottom:none}
+.tl-dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.tl-dot-pending{background:#f59e0b}
+.tl-dot-accepted{background:#6366f1}
+.tl-dot-completed{background:#10b981}
+.tl-dot-rejected{background:#ef4444}
+.tl-info{flex:1;min-width:0}
+.tl-name{font-size:.8rem;font-weight:600;color:#1f2937}
+.tl-date{font-size:.7rem;color:#9ca3af}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="db-page">
+  <div class="db-wrap">
+
+    <!-- Header -->
+    <div class="db-header">
+      <div class="db-header-left">
+        {% if user and user.avatar_url %}
+          <img src="{{ user.avatar_url }}" class="db-user-avatar" alt="avatar">
+        {% else %}
+          <div class="db-user-initials">{{ session['full_name'][0].upper() }}</div>
+        {% endif %}
+        <div>
+          <h1 class="db-greeting">Hello, {{ session['full_name'].split()[0] }} 👋</h1>
+          <p class="db-sub">Here's what's happening with your service requests today.</p>
+        </div>
+      </div>
+      <div class="db-header-actions">
+        <a href="{{ url_for('search_workers') }}" class="btn-db-primary">
+          <i class="ph ph-magnifying-glass"></i> Find Workers
+        </a>
+        <a href="{{ url_for('post_job') }}" class="btn-db-outline">
+          <i class="ph ph-plus"></i> Post Job
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="scard sc-total">
+        <div class="scard-icon"><i class="ph-fill ph-briefcase"></i></div>
+        <div class="scard-body">
+          <span class="scard-num">{{ stats.total }}</span>
+          <div class="scard-label">Total Requests</div>
+        </div>
+      </div>
+      <div class="scard sc-pending">
+        <div class="scard-icon"><i class="ph-fill ph-clock"></i></div>
+        <div class="scard-body">
+          <span class="scard-num">{{ stats.pending }}</span>
+          <div class="scard-label">Pending</div>
+        </div>
+      </div>
+      <div class="scard sc-active">
+        <div class="scard-icon"><i class="ph-fill ph-check-circle"></i></div>
+        <div class="scard-body">
+          <span class="scard-num">{{ stats.accepted }}</span>
+          <div class="scard-label">Active Jobs</div>
+        </div>
+      </div>
+      <div class="scard sc-done">
+        <div class="scard-icon"><i class="ph-fill ph-seal-check"></i></div>
+        <div class="scard-body">
+          <span class="scard-num">{{ stats.completed }}</span>
+          <div class="scard-label">Completed</div>
+        </div>
+      </div>
+      <div class="scard sc-posted">
+        <div class="scard-icon"><i class="ph-fill ph-newspaper"></i></div>
+        <div class="scard-body">
+          <span class="scard-num">{{ stats.posted_jobs }}</span>
+          <div class="scard-label">Open Posted Jobs</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="db-grid">
+      <!-- Left: Recent Requests -->
+      <div>
+        <div class="db-card">
+          <div class="db-card-header">
+            <span class="db-card-title"><i class="ph ph-list-checks" style="color:#6366f1"></i> Recent Requests</span>
+            <a href="{{ url_for('my_requests') }}" class="db-card-link">View All <i class="ph ph-arrow-right"></i></a>
+          </div>
+          {% if requests %}
+          <div>
+            {% for req in requests %}
+            <div class="req-item">
+              <div class="req-av">
+                {% if req.worker_avatar %}<img src="{{ req.worker_avatar }}" alt="">{% else %}{{ req.worker_name[0].upper() }}{% endif %}
+              </div>
+              <div class="req-body">
+                <div class="req-top">
+                  <span class="req-name">{{ req.worker_name }}</span>
+                  <span class="req-code">{{ req.request_code or ('#'+req.id|string) }}</span>
+                </div>
+                <div class="req-desc">{{ req.description[:70] }}{% if req.description|length > 70 %}…{% endif %}</div>
+                <div class="req-meta-row">
+                  <span><i class="ph ph-map-pin"></i>{{ req.location }}</span>
+                  <span><i class="ph ph-calendar"></i>{{ req.created_at.strftime('%d %b') }}</span>
+                  {% if req.status == 'pending' %}
+                    <span class="status-pill pill-pending">Pending</span>
+                  {% elif req.status == 'accepted' %}
+                    {% if req.job_stage == 'completed' %}
+                      <span class="status-pill pill-completed">Completed</span>
+                    {% else %}
+                      <span class="status-pill pill-accepted">Active</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="status-pill pill-rejected">Rejected</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-box">
+            <div><i class="ph ph-clipboard-text"></i></div>
+            <p>No requests yet. Find a worker to get started!</p>
+            <a href="{{ url_for('search_workers') }}" class="btn-db-primary" style="font-size:.8rem">Find Workers</a>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="db-card">
+          <div class="db-card-header">
+            <span class="db-card-title"><i class="ph ph-lightning" style="color:#f59e0b"></i> Quick Actions</span>
+          </div>
+          <div class="quick-grid">
+            <a href="{{ url_for('search_workers') }}" class="quick-card">
+              <i class="ph-fill ph-magnifying-glass"></i><span>Search Workers</span>
+            </a>
+            <a href="{{ url_for('post_job') }}" class="quick-card">
+              <i class="ph-fill ph-plus-circle"></i><span>Post a Job</span>
+            </a>
+            <a href="{{ url_for('my_requests') }}" class="quick-card">
+              <i class="ph-fill ph-list-checks"></i><span>My Requests</span>
+            </a>
+            <a href="{{ url_for('my_posted_jobs') }}" class="quick-card">
+              <i class="ph-fill ph-briefcase"></i><span>Posted Jobs</span>
+            </a>
+            <a href="{{ url_for('account_settings') }}" class="quick-card">
+              <i class="ph-fill ph-gear"></i><span>Settings</span>
+            </a>
+            <a href="{{ url_for('search_workers') }}?sort=rating" class="quick-card">
+              <i class="ph-fill ph-star"></i><span>Top Rated</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Timeline + Profile -->
+      <div>
+        <!-- Profile Card -->
+        <div class="db-card">
+          <div class="db-card-header">
+            <span class="db-card-title"><i class="ph ph-user-circle" style="color:#6366f1"></i> My Profile</span>
+            <a href="{{ url_for('account_settings') }}" class="db-card-link">Edit</a>
+          </div>
+          <div style="display:flex;align-items:center;gap:1rem">
+            {% if user and user.avatar_url %}
+              <img src="{{ user.avatar_url }}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #e0e7ff" alt="">
+            {% else %}
+              <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:1.3rem;font-weight:700;display:flex;align-items:center;justify-content:center">{{ session['full_name'][0].upper() }}</div>
+            {% endif %}
+            <div>
+              <div style="font-weight:700;color:#1e1b4b">{{ session['full_name'] }}</div>
+              <div style="font-size:.76rem;color:#6b7280;margin-top:.1rem"><i class="ph ph-phone"></i> {{ session['phone'] }}</div>
+              <div style="font-size:.72rem;margin-top:.25rem"><span style="background:#eef2ff;color:#4338ca;padding:.1rem .5rem;border-radius:5px;font-weight:600;font-size:.68rem">Customer</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Timeline -->
+        {% if requests %}
+        <div class="db-card">
+          <div class="db-card-header">
+            <span class="db-card-title"><i class="ph ph-activity" style="color:#10b981"></i> Activity Feed</span>
+          </div>
+          <ul class="timeline-list">
+            {% for req in requests %}
+            <li class="tl-item">
+              <div class="tl-dot tl-dot-{% if req.job_stage == 'completed' %}completed{% elif req.status == 'accepted' %}accepted{% elif req.status == 'rejected' %}rejected{% else %}pending{% endif %}"></div>
+              <div class="tl-info">
+                <div class="tl-name">{{ req.worker_name }} — {{ req.location[:30] }}</div>
+                <div class="tl-date">{{ req.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                  {% if req.request_code %}· <span style="font-family:monospace;color:#6366f1">{{ req.request_code }}</span>{% endif %}
+                </div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- Tips Card -->
+        <div class="db-card" style="background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;border:none">
+          <div style="font-weight:700;font-size:.95rem;margin-bottom:.5rem"><i class="ph ph-lightbulb"></i> Pro Tip</div>
+          <p style="font-size:.8rem;opacity:.9;margin:0">Always check a worker's badge level and reviews before hiring. Workers with <strong>Elite Pro</strong> or <strong>Trusted Pro</strong> badges have consistently high ratings!</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

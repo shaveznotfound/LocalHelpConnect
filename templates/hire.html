@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Hire {{ worker.full_name }} — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+.flatpickr-day.blocked { background:#fee2e2 !important; color:#dc2626 !important; border-radius:6px; text-decoration:line-through; }
+.scheduled-info { font-size:.78rem; color:#6366f1; background:#eef2ff; border-radius:8px; padding:.5rem .75rem; margin-top:.4rem; display:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <div class="inner-container narrow">
+    <div class="inner-header">
+      <div>
+        <h1 class="inner-title">Send Hire Request</h1>
+        <p class="inner-sub">Describe your job and optionally pick a scheduled date & time</p>
+      </div>
+      <a href="{{ url_for('search_workers') }}" class="btn-back"><i class="ph ph-arrow-left"></i> Back</a>
+    </div>
+
+    <div class="hire-worker-summary">
+      <div class="hws-avatar" style="overflow:hidden">
+        {% if worker.avatar_url %}
+          <img src="{{ worker.avatar_url }}" alt="{{ worker.full_name }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+        {% else %}
+          {{ worker.full_name[0].upper() }}
+        {% endif %}
+      </div>
+      <div class="hws-info">
+        <h2>{{ worker.full_name }}</h2>
+        {% if worker.location %}<p><i class="ph ph-map-pin"></i> {{ worker.location }}</p>{% endif %}
+        {% if worker.skills %}
+        <div class="worker-skills mt-1">
+          {% for s in worker.skills.split(',')[:4] %}<span class="skill-chip sm">{{ s.strip() }}</span>{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="hws-avail avail-{{ worker.availability }}">
+        <i class="ph-fill ph-circle"></i> {{ worker.availability | capitalize }}
+      </div>
+    </div>
+
+    <div class="form-card">
+      <form method="POST" action="{{ url_for('hire_worker', worker_id=worker.id) }}" id="hireForm">
+
+        <div class="form-group">
+          <label class="form-label" for="category"><i class="ph ph-tag"></i> Job Category</label>
+          <select id="category" name="category" class="form-input form-select">
+            <option value="">— Select Category —</option>
+            {% for cat in CATEGORIES %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="customer_budget">
+            <i class="ph ph-currency-inr"></i> Your Budget (₹)
+            <span style="font-size:.75rem;color:#9ca3af;font-weight:400"> (optional)</span>
+          </label>
+          <input type="number" id="customer_budget" name="customer_budget" class="form-input"
+            placeholder="e.g. 500" min="0" step="10">
+          <small class="form-hint">Set a budget so the worker can accept or negotiate the price with you.</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="location"><i class="ph ph-map-pin"></i> Job Location <span class="required">*</span></label>
+          <input type="text" id="location" name="location" class="form-input"
+            placeholder="e.g. Flat 204, Sector 56, Gurugram" required maxlength="200">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description"><i class="ph ph-text-align-left"></i> Job Description <span class="required">*</span></label>
+          <textarea id="description" name="description" class="form-textarea" rows="5"
+            placeholder="Describe the work needed in detail…" required maxlength="2000"></textarea>
+        </div>
+
+        <!-- Scheduling calendar (feature 2) -->
+        <div class="form-group">
+          <label class="form-label" for="scheduled_at">
+            <i class="ph ph-calendar-check"></i> Schedule Date & Time
+            <span style="font-size:.75rem;color:#9ca3af;font-weight:400"> (optional)</span>
+          </label>
+          <input type="text" id="scheduled_at" name="scheduled_at" class="form-input"
+            placeholder="Pick a date and time…" autocomplete="off" readonly>
+          <div class="scheduled-info" id="schedInfo">
+            <i class="ph ph-calendar-check"></i> <span id="schedText"></span>
+            — <a href="#" id="clearSched" style="color:#ef4444">Clear</a>
+          </div>
+          <small class="form-hint">
+            🔴 Red dates are days the worker has marked as unavailable.
+          </small>
+        </div>
+
+        <div class="hire-actions">
+          <a href="{{ url_for('search_workers') }}" class="btn-cancel">Cancel</a>
+          <button type="submit" class="btn-auth-submit">
+            <i class="ph ph-paper-plane-tilt"></i> Send Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+const BLOCKED_DATES = {{ blocked_dates | tojson }};
+
+flatpickr('#scheduled_at', {
+  enableTime: true,
+  dateFormat: 'Y-m-d H:i',
+  altInput: true,
+  altFormat: 'D, d M Y at h:i K',
+  minDate: 'today',
+  minuteIncrement: 30,
+  onDayCreate: function(dObj, dStr, fp, dayElem) {
+    const d = dayElem.dateObj;
+    const dateStr = d.getFullYear() + '-' +
+      String(d.getMonth()+1).padStart(2,'0') + '-' +
+      String(d.getDate()).padStart(2,'0');
+    if (BLOCKED_DATES.includes(dateStr)) {
+      dayElem.classList.add('blocked');
+      dayElem.title = 'Worker unavailable';
+    }
+  },
+  disable: BLOCKED_DATES,
+  onChange: function(selectedDates, dateStr) {
+    if (dateStr) {
+      document.getElementById('schedInfo').style.display = 'block';
+      document.getElementById('schedText').textContent = document.querySelector('#scheduled_at._flatpickr').value || dateStr;
+    }
+  }
+});
+
+document.getElementById('clearSched').addEventListener('click', function(e) {
+  e.preventDefault();
+  document.getElementById('scheduled_at')._flatpickr.clear();
+  document.getElementById('schedInfo').style.display = 'none';
+});
+</script>
+{% endblock %}

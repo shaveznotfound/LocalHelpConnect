@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Report {{ target.full_name }} — Local Help Connect{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <div class="inner-container narrow">
+    <div class="inner-header">
+      <div>
+        <h1 class="inner-title" style="color:#dc2626"><i class="ph ph-warning-octagon"></i> Report User</h1>
+        <p class="inner-sub">Reports are reviewed by our admin team within 24 hours</p>
+      </div>
+      <a href="javascript:history.back()" class="btn-back"><i class="ph ph-arrow-left"></i> Back</a>
+    </div>
+
+    <!-- Target summary -->
+    <div style="background:#fff;border-radius:16px;padding:1.2rem 1.4rem;margin-bottom:1.4rem;display:flex;align-items:center;gap:1rem;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid #dc2626">
+      <div style="width:48px;height:48px;border-radius:50%;background:#fee2e2;color:#dc2626;font-size:1.3rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        {{ target.full_name[0].upper() }}
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:1rem">{{ target.full_name }}</div>
+        <div style="font-size:.78rem;color:#9ca3af;text-transform:capitalize">{{ target.role }}</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <form method="POST" action="{{ url_for('report_user', reported_id=target.id) }}">
+
+        <div class="form-group">
+          <label class="form-label"><i class="ph ph-list-bullets"></i> Reason for Report <span class="required">*</span></label>
+          <select name="reason" class="form-input form-select" required>
+            <option value="">— Select a reason —</option>
+            <option value="Fake profile / impersonation">Fake profile / impersonation</option>
+            <option value="Harassment or abusive behaviour">Harassment or abusive behaviour</option>
+            <option value="No-show / job abandonment">No-show / job abandonment</option>
+            <option value="Fraud or overcharging">Fraud or overcharging</option>
+            <option value="Unprofessional conduct">Unprofessional conduct</option>
+            <option value="Spam or irrelevant contact">Spam or irrelevant contact</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="details"><i class="ph ph-note-pencil"></i> Additional Details (optional)</label>
+          <textarea name="details" id="details" class="form-textarea" rows="4"
+            placeholder="Describe what happened in your own words…" maxlength="1000"></textarea>
+          <small class="form-hint">Be specific — this helps the admin team investigate quickly.</small>
+        </div>
+
+        <div style="background:#fef3c7;border-radius:10px;padding:.85rem 1rem;font-size:.82rem;color:#92400e;margin-bottom:1.2rem">
+          <i class="ph ph-info"></i>
+          False reports may result in action against your account. Please report only genuine issues.
+        </div>
+
+        <div class="hire-actions">
+          <a href="javascript:history.back()" class="btn-cancel">Cancel</a>
+          <button type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:10px;padding:.7rem 1.4rem;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.4rem">
+            <i class="ph ph-warning-octagon"></i> Submit Report
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

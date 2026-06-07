@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+{% block title %}Find Workers — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<style>
+/* ── View toggle ─────────────────────────────────────────────────── */
+.view-toggle {
+  display: flex;
+  gap: .35rem;
+  background: var(--surface, #f3f4f6);
+  border-radius: 10px;
+  padding: .25rem;
+}
+.view-toggle button {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .45rem .9rem;
+  border: none;
+  border-radius: 7px;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #6b7280;
+  transition: all .18s;
+}
+.view-toggle button.active {
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12);
+}
+.view-toggle button i { font-size: 1rem; }
+
+/* ── Map wrapper ─────────────────────────────────────────────────── */
+#map-container {
+  display: none;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.10);
+  margin-bottom: 2rem;
+  position: relative;
+}
+#map-container.visible { display: block; }
+
+#worker-map { width: 100%; height: 520px; }
+
+/* ── Leaflet popup overrides ─────────────────────────────────────── */
+.lhc-popup .leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  min-width: 230px;
+}
+.lhc-popup .leaflet-popup-content { margin: 0; width: 242px !important; }
+.lhc-popup .leaflet-popup-tip-container { margin-top: -1px; }
+
+.pop-header {
+  padding: .85rem 1rem .65rem;
+  background: linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);
+  color:#fff;
+}
+.pop-header .pop-name { font-size:1rem; font-weight:700; margin:0 0 .25rem; line-height:1.2; }
+.pop-header .pop-badge {
+  display:inline-block; font-size:.68rem; font-weight:700;
+  padding:.18rem .5rem; border-radius:999px;
+  background:rgba(255,255,255,.22); color:#fff; letter-spacing:.02em;
+}
+.pop-body { padding:.7rem 1rem .45rem; }
+.pop-row {
+  display:flex; align-items:flex-start; gap:.35rem;
+  font-size:.78rem; color:#374151; margin-bottom:.3rem; line-height:1.4;
+}
+.pop-row i { color:#6366f1; font-size:.9rem; flex-shrink:0; margin-top:1px; }
+.pop-skills { display:flex; flex-wrap:wrap; gap:.25rem; margin:.4rem 0 .45rem; }
+.pop-skill {
+  font-size:.68rem; background:#eef2ff; color:#4338ca;
+  border-radius:999px; padding:.14rem .5rem; font-weight:600;
+}
+.pop-avail-dot {
+  display:inline-block; width:8px; height:8px;
+  border-radius:50%; flex-shrink:0; margin-top:4px;
+}
+.avail-available { background:#22c55e; }
+.avail-busy      { background:#f59e0b; }
+
+.pop-actions {
+  display:flex; gap:.4rem;
+  padding:.5rem 1rem .75rem;
+  border-top:1px solid #f3f4f6;
+}
+.pop-btn {
+  flex:1; text-align:center; padding:.45rem 0;
+  border-radius:8px; font-size:.77rem; font-weight:700;
+  text-decoration:none; transition:opacity .15s;
+  display:flex; align-items:center; justify-content:center; gap:.3rem;
+}
+.pop-btn:hover { opacity:.82; text-decoration:none; }
+.pop-btn-view { background:#f3f4f6; color:#111827; }
+.pop-btn-hire { background:#6366f1; color:#fff; }
+
+/* ── No-coords notice ────────────────────────────────────────────── */
+#map-no-coords {
+  display:none; text-align:center; padding:1rem;
+  font-size:.82rem; color:#92400e;
+  background:#fffbeb; border:1px solid #fde68a;
+  border-radius:10px; margin-bottom:1rem;
+}
+
+/* ── Map legend ──────────────────────────────────────────────────── */
+.map-legend {
+  position:absolute; bottom:12px; left:12px; z-index:1000;
+  background:rgba(255,255,255,.95); border-radius:10px;
+  padding:.55rem .85rem; font-size:.75rem; color:#374151;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+  display:flex; flex-direction:column; gap:.25rem;
+  backdrop-filter:blur(4px);
+}
+.legend-row { display:flex; align-items:center; gap:.45rem; }
+.legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+/* ── Results meta row ────────────────────────────────────────────── */
+.results-meta-row {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:.6rem; margin-bottom:1.2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <div class="inner-container">
+
+    <!-- ── SEARCH HERO ─────────────────────────────────────────── -->
+    <div class="search-hero">
+      <h1>Find Skilled Workers <span class="accent">Near You</span></h1>
+      <p>Browse verified professionals ready to help with your needs</p>
+
+      <form method="GET" action="{{ url_for('search_workers') }}" class="search-bar-form">
+        <div class="search-bar">
+          <div class="search-field">
+            <i class="ph ph-wrench"></i>
+            <input type="text" name="skill" placeholder="Skill (e.g. Electrician, Plumber)"
+              value="{{ skill }}" class="search-input">
+          </div>
+          <div class="search-divider"></div>
+          <div class="search-field">
+            <i class="ph ph-map-pin"></i>
+            <input type="text" name="location" placeholder="Location (e.g. Gurugram, Delhi)"
+              value="{{ location }}" class="search-input">
+          </div>
+          <button type="submit" class="search-submit-btn">
+            <i class="ph ph-magnifying-glass"></i><span>Search</span>
+          </button>
+        </div>
+      </form>
+
+      {% if skill or location %}
+      <div class="search-active-filters">
+        <span class="filter-label">Filtered by:</span>
+        {% if skill %}<span class="filter-tag">Skill: {{ skill }} <a href="?location={{ location }}">×</a></span>{% endif %}
+        {% if location %}<span class="filter-tag">Location: {{ location }} <a href="?skill={{ skill }}">×</a></span>{% endif %}
+        <a href="{{ url_for('search_workers') }}" class="filter-clear">Clear All</a>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if workers %}
+    <!-- ── RESULTS META + VIEW TOGGLE ──────────────────────────── -->
+    <div class="results-meta-row">
+      <div>
+        <span>{{ workers|length }} worker{% if workers|length != 1 %}s{% endif %} found</span>
+        <span style="font-size:.75rem;color:#9ca3af;margin-left:.5rem">· Sorted by rating</span>
+      </div>
+      <div class="view-toggle" role="group" aria-label="View mode">
+        <button id="btn-grid" class="active" onclick="setView('grid')" title="Grid view (G)">
+          <i class="ph ph-squares-four"></i> Grid
+        </button>
+        <button id="btn-map" onclick="setView('map')" title="Map view (M)">
+          <i class="ph ph-map-trifold"></i> Map
+        </button>
+      </div>
+    </div>
+
+    <!-- ── MAP VIEW ───────────────────────────────────────────── -->
+    <div id="map-no-coords">
+      <i class="ph ph-info"></i>
+      No workers in these results have a geocoded location yet —
+      workers appear as pins after they save their profile with a location.
+    </div>
+    <div id="map-container">
+      <div id="worker-map"></div>
+      <div class="map-legend">
+        <div class="legend-row"><div class="legend-dot" style="background:#6366f1"></div> Available</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#f59e0b"></div> Busy</div>
+      </div>
+    </div>
+
+    <!-- ── GRID VIEW ──────────────────────────────────────────── -->
+    <div id="grid-container" class="workers-grid">
+      {% for worker in workers %}
+      <div class="worker-card" data-worker-id="{{ worker.id }}">
+        <div class="worker-card-top" style="overflow:hidden">
+          {% if worker.avatar_url %}
+            <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;box-shadow:0 4px 14px rgba(67,56,202,.3);flex-shrink:0">
+              <img src="{{ worker.avatar_url }}" alt="{{ worker.full_name }}" style="width:100%;height:100%;object-fit:cover">
+            </div>
+          {% else %}
+            <div class="worker-avatar-lg">{{ worker.full_name[0].upper() }}</div>
+          {% endif %}
+          <div class="worker-avail-dot avail-dot-{{ worker.availability }}"></div>
+        </div>
+        <div class="worker-card-body">
+          <h3 class="worker-name">{{ worker.full_name }}</h3>
+
+          {% set b = worker.badge %}
+          <div style="margin-bottom:.35rem">
+            <span class="worker-badge {{ b.cls }}" style="--badge-color:{{ b.color }}; font-size:.72rem; padding:.25rem .6rem">
+              <i class="ph-fill {{ b.icon }}"></i> {{ b.label }}
+            </span>
+          </div>
+
+          {% if worker.avg_rating %}
+          <div class="worker-rating-row">
+            <span class="star-mini-row">
+              {% for i in range(1,6) %}
+                <i class="ph-fill ph-star{% if i > (worker.avg_rating + 0.5)|int %} star-empty{% endif %}"></i>
+              {% endfor %}
+            </span>
+            <span class="rating-num">{{ worker.avg_rating }}</span>
+            <span class="rating-cnt">({{ worker.total_ratings }})</span>
+            <span class="jobs-done">· {{ worker.total_completed }} job{% if worker.total_completed != 1 %}s{% endif %}</span>
+          </div>
+          {% else %}
+          <div class="worker-rating-row">
+            <span style="font-size:.75rem;color:#9ca3af">No ratings yet</span>
+            {% if worker.total_completed > 0 %}
+            <span class="jobs-done" style="margin-left:.4rem">· {{ worker.total_completed }} job{% if worker.total_completed != 1 %}s{% endif %}</span>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          {% if worker.location %}
+          <p class="worker-location"><i class="ph ph-map-pin"></i> {{ worker.location }}</p>
+          {% endif %}
+          {% if worker.skills %}
+          <div class="worker-skills">
+            {% for skill_item in worker.skills.split(',')[:3] %}
+            <span class="skill-chip sm">{{ skill_item.strip() }}</span>
+            {% endfor %}
+            {% if worker.skills.split(',') | length > 3 %}
+            <span class="skill-chip sm more">+{{ worker.skills.split(',') | length - 3 }}</span>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% if worker.description %}
+          <p class="worker-desc">{{ worker.description[:90] }}{% if worker.description|length > 90 %}...{% endif %}</p>
+          {% endif %}
+          {% if worker.experience %}
+          <p class="worker-exp"><i class="ph ph-clock-countdown"></i> {{ worker.experience }}</p>
+          {% endif %}
+        </div>
+        <div class="worker-card-footer">
+          <a href="{{ url_for('view_worker', worker_id=worker.id) }}" class="btn-view-profile">
+            <i class="ph ph-eye"></i> View Profile
+          </a>
+          {% if session.get('role') == 'customer' %}
+          <a href="{{ url_for('hire_worker', worker_id=worker.id) }}" class="btn-hire-worker">
+            <i class="ph ph-handshake"></i> Hire
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state big">
+      <div class="empty-icon"><i class="ph ph-users-three"></i></div>
+      <h3>No workers found</h3>
+      <p>Try different search terms or clear filters to see all workers.</p>
+      <a href="{{ url_for('search_workers') }}" class="btn-dash-primary">Show All Workers</a>
+    </div>
+    {% endif %}
+
+  </div><!-- /.inner-container -->
+</div><!-- /.inner-page -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   Local Help Connect — Leaflet Map View
+   Endpoint: GET /api/workers/map?skill=…&location=…
+   Workers only appear as pins after their profile has been geocoded
+   (i.e. after they save their profile with a location text).
+═══════════════════════════════════════════════════════════════════ */
+
+const SEARCH_PARAMS = new URLSearchParams({
+  skill:    {{ skill|tojson }},
+  location: {{ location|tojson }}
+});
+const IS_CUSTOMER = {{ 'true' if session.get('role') == 'customer' else 'false' }};
+
+let map_obj      = null;
+let markersLayer = null;
+let currentView  = 'grid';
+
+/* ── Custom SVG drop-pin ─────────────────────────────────────────── */
+function makePin(hexColor, initial) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">
+    <defs>
+      <filter id="ds" x="-40%" y="-20%" width="180%" height="160%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,.3)"/>
+      </filter>
+    </defs>
+    <path filter="url(#ds)"
+      d="M18 1C9.72 1 3 7.72 3 16 3 27 18 45 18 45S33 27 33 16C33 7.72 26.28 1 18 1z"
+      fill="${hexColor}"/>
+    <circle cx="18" cy="16" r="9.5" fill="rgba(255,255,255,.18)"/>
+    <text x="18" y="21" text-anchor="middle"
+          font-family="DM Sans,Syne,sans-serif" font-weight="800"
+          font-size="12" fill="#fff">${initial}</text>
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '',
+    iconSize: [36, 46], iconAnchor: [18, 46], popupAnchor: [0, -48]
+  });
+}
+
+/* ── Stars ───────────────────────────────────────────────────────── */
+function starsHtml(r) {
+  if (!r) return '<span style="color:#9ca3af;font-size:.75rem">No ratings</span>';
+  let s = '';
+  for (let i = 1; i <= 5; i++)
+    s += `<span style="color:${i <= Math.round(r) ? '#f59e0b' : '#d1d5db'}">★</span>`;
+  return s + ` <strong>${r}</strong>`;
+}
+
+/* ── Popup HTML ──────────────────────────────────────────────────── */
+function buildPopup(w) {
+  const chips = w.skills.map(s => `<span class="pop-skill">${s}</span>`).join('');
+  const hire  = IS_CUSTOMER
+    ? `<a class="pop-btn pop-btn-hire" href="/hire/${w.id}">🤝 Hire</a>` : '';
+  const availLabel = w.availability.charAt(0).toUpperCase() + w.availability.slice(1);
+  const avatarHtml = w.avatar_url
+    ? `<img src="${w.avatar_url}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.5);flex-shrink:0">`
+    : `<div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${w.name[0].toUpperCase()}</div>`;
+
+  return `
+    <div>
+      <div class="pop-header" style="display:flex;align-items:center;gap:.6rem">
+        ${avatarHtml}
+        <div>
+          <div class="pop-name">${w.name}</div>
+          <span class="pop-badge" style="background:${w.badge_color}33;border:1px solid ${w.badge_color}66">
+            ${w.badge_label}
+          </span>
+        </div>
+      </div>
+      <div class="pop-body">
+        <div class="pop-row">
+          <i class="ph ph-map-pin"></i>
+          <span>${w.location || '—'}</span>
+        </div>
+        <div class="pop-row">
+          <div class="pop-avail-dot avail-${w.availability}"></div>
+          <span>${availLabel}&nbsp;·&nbsp;${starsHtml(w.avg_rating)}</span>
+        </div>
+        <div class="pop-row">
+          <i class="ph ph-briefcase"></i>
+          <span>${w.total_completed} job${w.total_completed !== 1 ? 's' : ''} completed</span>
+        </div>
+        ${chips ? `<div class="pop-skills">${chips}</div>` : ''}
+        ${w.description
+          ? `<div class="pop-row" style="font-size:.74rem;color:#6b7280;line-height:1.45">
+               ${w.description}${w.description.length >= 100 ? '…' : ''}</div>`
+          : ''}
+      </div>
+      <div class="pop-actions">
+        <a class="pop-btn pop-btn-view" href="/worker/${w.id}">
+          <i class="ph ph-eye"></i> View
+        </a>
+        ${hire}
+      </div>
+    </div>`;
+}
+
+/* ── Init / refresh map ──────────────────────────────────────────── */
+async function initMap() {
+  /* Create Leaflet instance only once */
+  if (!map_obj) {
+    map_obj = L.map('worker-map', {
+      center: [28.4595, 77.0266],   // Gurugram
+      zoom: 11,
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(map_obj);
+
+    markersLayer = L.layerGroup().addTo(map_obj);
+  }
+
+  /* Fetch geocoded workers */
+  let workers = [];
+  try {
+    const res = await fetch(`/api/workers/map?${SEARCH_PARAMS}`);
+    if (res.ok) workers = await res.json();
+  } catch (err) { console.error('[Map] fetch error', err); }
+
+  document.getElementById('map-no-coords').style.display =
+    workers.length === 0 ? 'block' : 'none';
+
+  markersLayer.clearLayers();
+  if (!workers.length) return;
+
+  const bounds = [];
+  workers.forEach(w => {
+    const pinHex = w.availability === 'available' ? '#6366f1' : '#f59e0b';
+    const icon   = makePin(pinHex, w.name[0].toUpperCase());
+
+    L.marker([w.lat, w.lng], { icon, title: w.name })
+      .bindPopup(buildPopup(w), { className: 'lhc-popup', maxWidth: 260, minWidth: 242 })
+      .addTo(markersLayer);
+
+    bounds.push([w.lat, w.lng]);
+  });
+
+  /* Fit viewport to pins */
+  if (bounds.length === 1) {
+    map_obj.setView(bounds[0], 13);
+  } else {
+    map_obj.fitBounds(bounds, { padding: [50, 50] });
+  }
+
+  /* Force re-render if container was hidden when map was created */
+  setTimeout(() => map_obj.invalidateSize(), 60);
+}
+
+/* ── Toggle between grid and map ─────────────────────────────────── */
+function setView(view) {
+  currentView = view;
+  const grid = document.getElementById('grid-container');
+  const mapC = document.getElementById('map-container');
+
+  if (view === 'map') {
+    grid.style.display = 'none';
+    mapC.classList.add('visible');
+    document.getElementById('btn-grid').classList.remove('active');
+    document.getElementById('btn-map').classList.add('active');
+    initMap();
+  } else {
+    mapC.classList.remove('visible');
+    grid.style.display = '';
+    document.getElementById('btn-grid').classList.add('active');
+    document.getElementById('btn-map').classList.remove('active');
+  }
+}
+
+/* ── Keyboard shortcut — press M to toggle map ───────────────────── */
+document.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toUpperCase();
+  if (e.key === 'm' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+    setView(currentView === 'map' ? 'grid' : 'map');
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% block title %}Chat — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-page{min-height:calc(100vh - 70px);background:#f4f6fb;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem 0}
+.chat-wrapper{width:100%;max-width:780px;display:flex;flex-direction:column;height:calc(100vh - 130px)}
+.chat-header{background:#fff;border-radius:18px 18px 0 0;padding:1rem 1.4rem;display:flex;align-items:center;gap:.9rem;border-bottom:1px solid #e8eaf0;box-shadow:0 2px 8px rgba(99,102,241,.06)}
+.chat-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.chat-avatar img{width:100%;height:100%;object-fit:cover}
+.chat-header-info{flex:1}
+.chat-header-name{font-weight:700;font-size:.98rem;color:#1e1b4b}
+.chat-header-meta{font-size:.76rem;color:#6b7280;display:flex;align-items:center;gap:.4rem;margin-top:1px}
+.chat-req-badge{font-family:monospace;background:#eef2ff;color:#4338ca;padding:.1rem .45rem;border-radius:5px;font-size:.7rem;font-weight:700}
+.chat-back-btn{display:flex;align-items:center;gap:.4rem;font-size:.83rem;color:#6366f1;font-weight:600;text-decoration:none;padding:.38rem .8rem;border-radius:8px;background:#eef2ff;transition:background .2s}
+.chat-back-btn:hover{background:#e0e7ff}
+.chat-messages{flex:1;overflow-y:auto;background:#fff;padding:1.2rem 1.4rem;display:flex;flex-direction:column;gap:.7rem;scroll-behavior:smooth}
+.chat-messages::-webkit-scrollbar{width:5px}
+.chat-messages::-webkit-scrollbar-thumb{background:#e0e7ff;border-radius:3px}
+.chat-date-sep{text-align:center;font-size:.7rem;color:#9ca3af;margin:.3rem 0}
+.msg-row{display:flex;align-items:flex-end;gap:.45rem;animation:msgIn .18s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg-row.mine{flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:50%;background:#e0e7ff;color:#6366f1;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.msg-av img{width:100%;height:100%;object-fit:cover}
+.msg-row.mine .msg-av{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+.msg-content{max-width:65%;display:flex;flex-direction:column}
+.msg-row.mine .msg-content{align-items:flex-end}
+.msg-sender{font-size:.68rem;color:#9ca3af;margin-bottom:2px;padding:0 4px}
+.msg-bubble{padding:.6rem .85rem;border-radius:16px;font-size:.88rem;line-height:1.45;word-break:break-word}
+.msg-row:not(.mine) .msg-bubble{background:#f3f4f6;color:#1f2937;border-bottom-left-radius:4px}
+.msg-row.mine .msg-bubble{background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;border-bottom-right-radius:4px}
+.msg-time{font-size:.65rem;color:#9ca3af;margin-top:2px;padding:0 4px}
+/* Image messages */
+.msg-img-wrap{max-width:220px;border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.msg-img-wrap img{width:100%;display:block;border-radius:12px;transition:opacity .15s}
+.msg-img-wrap img:hover{opacity:.9}
+/* File messages */
+.msg-file{display:flex;align-items:center;gap:.6rem;background:#f3f4f6;border-radius:12px;padding:.6rem .85rem;min-width:180px;max-width:260px;text-decoration:none;transition:background .15s}
+.msg-row.mine .msg-file{background:rgba(255,255,255,.2)}
+.msg-file-icon{font-size:1.5rem;flex-shrink:0;color:#6366f1}
+.msg-row.mine .msg-file-icon{color:#fff}
+.msg-file-info{flex:1;min-width:0}
+.msg-file-name{font-size:.8rem;font-weight:600;color:#1f2937;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.msg-row.mine .msg-file-name{color:#fff}
+.msg-file-size{font-size:.68rem;color:#6b7280}
+.msg-row.mine .msg-file-size{color:rgba(255,255,255,.7)}
+.msg-file-dl{font-size:.72rem;color:#6366f1;font-weight:600}
+.msg-row.mine .msg-file-dl{color:#fff}
+/* Input bar */
+.chat-req-strip{background:#eef2ff;border-left:3px solid #6366f1;border-radius:0 8px 8px 0;padding:.45rem .9rem;font-size:.78rem;color:#4f46e5;display:flex;gap:1.2rem;flex-wrap:wrap;margin:0 1.4rem .3rem}
+.chat-req-strip span{display:flex;align-items:center;gap:.3rem}
+.typing-indicator{padding:.2rem 1.4rem;font-size:.73rem;color:#6366f1;font-style:italic;min-height:1.3rem;background:#fff}
+.chat-input-bar{background:#fff;border-radius:0 0 18px 18px;padding:.8rem 1.1rem;display:flex;gap:.6rem;align-items:flex-end;border-top:1px solid #e8eaf0}
+#chatInput{flex:1;border:1.5px solid #e5e7eb;border-radius:20px;padding:.55rem 1rem;font-size:.9rem;outline:none;transition:border-color .2s;resize:none;font-family:inherit;line-height:1.4;max-height:110px}
+#chatInput:focus{border-color:#6366f1}
+.chat-send-btn{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;border:none;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;transition:transform .15s,box-shadow .15s;flex-shrink:0}
+.chat-send-btn:hover{transform:scale(1.08);box-shadow:0 4px 14px rgba(99,102,241,.4)}
+.chat-send-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+/* File attach button */
+.chat-attach-btn{width:38px;height:38px;border-radius:50%;background:#f3f4f6;border:none;color:#6366f1;font-size:1.1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;flex-shrink:0}
+.chat-attach-btn:hover{background:#e0e7ff}
+#fileInput{display:none}
+/* Upload preview */
+.upload-preview{background:#eef2ff;border-radius:10px;padding:.55rem .9rem;margin:0 1.4rem .3rem;display:flex;align-items:center;gap:.6rem;font-size:.8rem;color:#4338ca;display:none}
+.upload-preview.show{display:flex}
+.up-cancel{margin-left:auto;cursor:pointer;color:#ef4444;font-size:.85rem}
+/* Empty */
+.chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;color:#9ca3af}
+.chat-empty i{font-size:2.5rem;color:#d1d5db}
+/* Image lightbox */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center}
+.lightbox.open{display:flex}
+.lightbox img{max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.lightbox-close{position:absolute;top:1.5rem;right:1.5rem;width:42px;height:42px;background:rgba(255,255,255,.15);border:none;border-radius:50%;color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-page">
+  <div class="chat-wrapper">
+    <!-- Header -->
+    <div class="chat-header">
+      {% set other_name = req.worker_name if session['user_id'] == req.customer_id else req.customer_name %}
+      {% set other_avatar = req.worker_avatar if session['user_id'] == req.customer_id else req.customer_avatar %}
+      {% set other_role = 'Worker' if session['user_id'] == req.customer_id else 'Customer' %}
+      <div class="chat-avatar">
+        {% if other_avatar %}<img src="{{ other_avatar }}" alt="">{% else %}{{ other_name[0].upper() }}{% endif %}
+      </div>
+      <div class="chat-header-info">
+        <div class="chat-header-name">{{ other_name }}</div>
+        <div class="chat-header-meta">
+          <span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block"></span>
+          {{ other_role }} · <span class="chat-req-badge">{{ req.request_code or ('#'+req.id|string) }}</span>
+        </div>
+      </div>
+      <a href="{{ url_for('my_requests') if session['user_id'] == req.customer_id else url_for('incoming_requests') }}" class="chat-back-btn">
+        <i class="ph ph-arrow-left"></i> Back
+      </a>
+    </div>
+
+    <!-- Request strip -->
+    <div class="chat-req-strip">
+      <span><i class="ph ph-map-pin"></i> {{ req.location }}</span>
+      {% if req.category %}<span><i class="ph ph-tag"></i> {{ req.category }}</span>{% endif %}
+      <span><i class="ph ph-text-align-left"></i> {{ req.description[:60] }}{% if req.description|length > 60 %}…{% endif %}</span>
+    </div>
+
+    <!-- Upload preview bar -->
+    <div class="upload-preview" id="uploadPreview">
+      <i class="ph ph-paperclip"></i>
+      <span id="uploadFileName">file.jpg</span>
+      <span id="uploadFileSize" style="color:#6b7280;font-size:.73rem"></span>
+      <span class="up-cancel" onclick="cancelUpload()" title="Remove"><i class="ph ph-x"></i></span>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages">
+      {% if messages %}
+        <div class="chat-date-sep">Conversation started</div>
+        {% for msg in messages %}
+        <div class="msg-row {% if msg.sender_id == session['user_id'] %}mine{% endif %}" data-msg-id="{{ msg.id }}">
+          <div class="msg-av">
+            {% if msg.sender_avatar %}<img src="{{ msg.sender_avatar }}" alt="">{% else %}{{ msg.sender_name[0].upper() }}{% endif %}
+          </div>
+          <div class="msg-content">
+            {% if msg.sender_id != session['user_id'] %}<span class="msg-sender">{{ msg.sender_name.split()[0] }}</span>{% endif %}
+            {% if msg.msg_type == 'image' %}
+              <div class="msg-img-wrap" onclick="openLightbox('{{ msg.file_url }}')">
+                <img src="{{ msg.file_url }}" alt="{{ msg.file_name }}" loading="lazy">
+              </div>
+            {% elif msg.msg_type == 'file' %}
+              <a class="msg-file" href="{{ msg.file_url }}" target="_blank" download="{{ msg.file_name }}">
+                <i class="ph-fill ph-file-text msg-file-icon"></i>
+                <div class="msg-file-info">
+                  <div class="msg-file-name">{{ msg.file_name }}</div>
+                  {% if msg.file_size %}<div class="msg-file-size">{{ (msg.file_size/1024)|int }} KB</div>{% endif %}
+                </div>
+                <i class="ph ph-download-simple msg-file-dl"></i>
+              </a>
+            {% else %}
+              <div class="msg-bubble">{{ msg.message }}</div>
+            {% endif %}
+            <span class="msg-time">{{ msg.created_at.strftime('%I:%M %p') }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="chat-empty" id="emptyState">
+          <i class="ph ph-chat-circle-dots"></i>
+          <p>No messages yet. Say hello! 👋</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Typing indicator -->
+    <div class="typing-indicator" id="typingIndicator"></div>
+
+    <!-- Input bar -->
+    <div class="chat-input-bar">
+      <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt,.zip">
+      <button class="chat-attach-btn" id="attachBtn" title="Attach file/image" onclick="document.getElementById('fileInput').click()">
+        <i class="ph ph-paperclip"></i>
+      </button>
+      <textarea id="chatInput" placeholder="Type a message…" rows="1" maxlength="2000"></textarea>
+      <button class="chat-send-btn" id="sendBtn" title="Send"><i class="ph-fill ph-paper-plane-tilt"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()"><i class="ph ph-x"></i></button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+(function () {
+  const REQ_ID   = {{ req.id }};
+  const MY_ID    = {{ session['user_id'] }};
+  const MY_NAME  = {{ session['full_name'] | tojson }};
+  const MY_AVATAR= {{ (session.get('avatar_url') or '') | tojson }};
+
+  const box      = document.getElementById('chatMessages');
+  const input    = document.getElementById('chatInput');
+  const btn      = document.getElementById('sendBtn');
+  const emptyEl  = document.getElementById('emptyState');
+  const typingEl = document.getElementById('typingIndicator');
+  const fileInput= document.getElementById('fileInput');
+  const upPreview= document.getElementById('uploadPreview');
+  let pendingFile = null;
+
+  // ── Socket.IO ──────────────────────────────────────────────────────
+  const socket = io();
+  socket.emit('join', { req_id: REQ_ID });
+
+  socket.on('new_message', function (msg) {
+    if (emptyEl) emptyEl.remove();
+    if (msg.sender_id === MY_ID && document.querySelector(`[data-optimistic="${CSS.escape(msg.message ? msg.message.substring(0,20) : '')}"]`)) {
+      const opt = document.querySelector(`[data-optimistic="${CSS.escape(msg.message ? msg.message.substring(0,20) : '')}"]`);
+      if (opt) opt.removeAttribute('data-optimistic');
+      return;
+    }
+    if (msg.sender_id !== MY_ID) {
+      appendBubble(msg);
+      scrollBottom();
+    }
+  });
+
+  let typingTimer;
+  socket.on('user_typing', d => { typingEl.textContent = d.name.split(' ')[0] + ' is typing…'; clearTimeout(typingTimer); typingTimer = setTimeout(() => typingEl.textContent='',3000); });
+  socket.on('user_stop_typing', () => typingEl.textContent='');
+
+  let typingTimeout;
+  input.addEventListener('input', function () {
+    socket.emit('typing', { req_id: REQ_ID });
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => socket.emit('stop_typing', { req_id: REQ_ID }), 1500);
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 110) + 'px';
+  });
+
+  // ── File picker ────────────────────────────────────────────────────
+  fileInput.addEventListener('change', function () {
+    if (!this.files.length) return;
+    pendingFile = this.files[0];
+    document.getElementById('uploadFileName').textContent = pendingFile.name;
+    document.getElementById('uploadFileSize').textContent = '(' + (pendingFile.size/1024).toFixed(0) + ' KB)';
+    upPreview.classList.add('show');
+  });
+
+  window.cancelUpload = function () {
+    pendingFile = null; fileInput.value='';
+    upPreview.classList.remove('show');
+  };
+
+  // ── Helpers ────────────────────────────────────────────────────────
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtSize(b){ return b < 1024 ? b+'B' : (b/1024).toFixed(0)+'KB'; }
+
+  function avatarHtml(name, url, mine){
+    if(url) return `<div class="msg-av"><img src="${esc(url)}" alt=""></div>`;
+    const cl = mine ? 'style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff"' : '';
+    return `<div class="msg-av" ${cl}>${esc(name[0].toUpperCase())}</div>`;
+  }
+
+  function buildBubble(msg){
+    const mine = msg.sender_id === MY_ID;
+    const t = msg.time_str || new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    let body = '';
+    if(msg.msg_type === 'image'){
+      body = `<div class="msg-img-wrap" onclick="openLightbox('${esc(msg.file_url)}')"><img src="${esc(msg.file_url)}" loading="lazy" style="max-width:220px;display:block;border-radius:12px"></div>`;
+    } else if(msg.msg_type === 'file'){
+      body = `<a class="msg-file" href="${esc(msg.file_url)}" target="_blank" download="${esc(msg.file_name||'')}">
+        <i class="ph-fill ph-file-text msg-file-icon"></i>
+        <div class="msg-file-info">
+          <div class="msg-file-name">${esc(msg.file_name||'File')}</div>
+          ${msg.file_size?`<div class="msg-file-size">${fmtSize(msg.file_size)}</div>`:''}
+        </div>
+        <i class="ph ph-download-simple msg-file-dl"></i>
+      </a>`;
+    } else {
+      body = `<div class="msg-bubble">${esc(msg.message||'')}</div>`;
+    }
+    const preview = (msg.message||'').substring(0,20);
+    return `<div class="msg-row ${mine?'mine':''}" data-msg-id="${msg.id||''}" ${mine?`data-optimistic="${esc(preview)}"`:''}> 
+      ${avatarHtml(msg.sender_name||'?', msg.sender_avatar||'', mine)}
+      <div class="msg-content">
+        ${!mine?`<span class="msg-sender">${esc((msg.sender_name||'').split(' ')[0])}</span>`:''}
+        ${body}
+        <span class="msg-time">${t}</span>
+      </div></div>`;
+  }
+
+  function appendBubble(msg){
+    box.insertAdjacentHTML('beforeend', buildBubble(msg));
+  }
+
+  // ── Send ───────────────────────────────────────────────────────────
+  async function sendMsg() {
+    // File upload case
+    if (pendingFile) {
+      await uploadFile(pendingFile);
+      cancelUpload();
+      return;
+    }
+    const text = input.value.trim();
+    if (!text) return;
+    btn.disabled = true;
+    input.value = ''; input.style.height='auto';
+    socket.emit('stop_typing', { req_id: REQ_ID });
+    if(emptyEl) emptyEl.remove();
+    const fakeMsg = { id: Date.now(), sender_id: MY_ID, sender_name: MY_NAME, sender_avatar: MY_AVATAR,
+                      message: text, msg_type:'text', time_str: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) };
+    appendBubble(fakeMsg);
+    scrollBottom();
+    socket.emit('send_message', { req_id: REQ_ID, message: text });
+    btn.disabled = false;
+    input.focus();
+  }
+
+  async function uploadFile(file) {
+    btn.disabled = true;
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const resp = await fetch(`/chat/${REQ_ID}/upload`, { method:'POST', body:fd });
+      const data = await resp.json();
+      if(data.ok && data.msg){
+        if(emptyEl) emptyEl.remove();
+        appendBubble({...data.msg, sender_id: MY_ID});
+        scrollBottom();
+      } else {
+        alert(data.error || 'Upload failed');
+      }
+    } catch(e){ alert('Upload failed'); }
+    btn.disabled = false;
+  }
+
+  btn.addEventListener('click', sendMsg);
+  input.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); } });
+
+  function scrollBottom(){ box.scrollTop = box.scrollHeight; }
+  scrollBottom();
+  window.addEventListener('beforeunload', () => socket.emit('leave', { req_id: REQ_ID }));
+})();
+
+// ── Lightbox ───────────────────────────────────────────────────────
+function openLightbox(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('open'); }
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('open'); }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
+</script>
+{% endblock %}

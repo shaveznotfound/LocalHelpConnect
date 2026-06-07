@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} Error — Local Help Connect{% endblock %}
+
+{% block content %}
+<div class="error-page">
+  <div class="error-container">
+    <div class="error-code">{{ code }}</div>
+    <h1 class="error-title">{{ message }}</h1>
+    <p class="error-sub">
+      {% if code == 404 %}
+        The page you're looking for doesn't exist or has been moved.
+      {% else %}
+        Something went wrong on our end. Please try again later.
+      {% endif %}
+    </p>
+    <div class="error-actions">
+      <a href="{{ url_for('index') }}" class="btn-dash-primary">
+        <i class="ph ph-house"></i> Go Home
+      </a>
+      {% if session.get('user_id') %}
+      <a href="{{ url_for('dashboard') }}" class="btn-dash-outline">
+        <i class="ph ph-layout"></i> Dashboard
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

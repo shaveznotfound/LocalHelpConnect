@@ -1,0 +1,107 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Users — Admin{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block page_subtitle %}{{ users | length }} result(s){% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <div class="admin-card-header">
+    <span class="admin-card-title"><i class="ph ph-users-three"></i> All Users</span>
+    <form method="GET" class="filter-bar">
+      <input type="text" name="search" class="filter-input" placeholder="Search name, phone, email…" value="{{ search }}">
+      <select name="role" class="filter-select">
+        <option value="">All roles</option>
+        <option value="customer" {% if role_filter == 'customer' %}selected{% endif %}>Customer</option>
+        <option value="worker"   {% if role_filter == 'worker'   %}selected{% endif %}>Worker</option>
+      </select>
+      <select name="status" class="filter-select">
+        <option value="">All statuses</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="banned" {% if status_filter == 'banned' %}selected{% endif %}>Banned</option>
+      </select>
+      <button type="submit" class="filter-btn"><i class="ph ph-magnifying-glass"></i> Filter</button>
+      {% if search or role_filter or status_filter %}
+      <a href="{{ url_for('admin_users') }}" class="btn-outline-admin">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if users %}
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Jobs</th>
+        <th>Status</th>
+        <th>Joined</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td style="color:var(--text-muted);font-size:.78rem">{{ u.id }}</td>
+        <td>
+          <a href="{{ url_for('admin_user_detail', uid=u.id) }}" style="text-decoration:none;color:inherit">
+            <div style="display:flex;align-items:center;gap:.6rem">
+              <div style="width:30px;height:30px;border-radius:50%;background:{% if u.role == 'worker' %}#dbeafe{% else %}#dcfce7{% endif %};
+                          color:{% if u.role == 'worker' %}#1d4ed8{% else %}#15803d{% endif %};
+                          display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0;overflow:hidden">
+                {% if u.avatar_url %}<img src="{{ u.avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="">{% else %}{{ u.full_name[0].upper() }}{% endif %}
+              </div>
+              <span style="font-weight:500">{{ u.full_name }}</span>
+            </div>
+          </a>
+        </td>
+        <td style="font-family:monospace;font-size:.82rem">{{ u.phone }}</td>
+        <td style="font-size:.82rem;color:var(--text-secondary)">{{ u.email or '—' }}</td>
+        <td><span class="role-badge {{ u.role }}">{{ u.role | capitalize }}</span></td>
+        <td style="font-size:.82rem">
+          {% if u.role == 'worker' %}
+            <span title="Jobs as worker" style="color:#2563eb">{{ u.jobs_as_worker }} <i class="ph ph-hard-hat"></i></span>
+          {% else %}
+            <span title="Jobs as customer" style="color:#16a34a">{{ u.jobs_as_customer }} <i class="ph ph-user-circle"></i></span>
+          {% endif %}
+        </td>
+        <td>
+          {% if u.is_banned %}
+          <span class="role-badge banned"><i class="ph ph-prohibit"></i> Banned</span>
+          {% else %}
+          <span style="font-size:.78rem;color:#16a34a;font-weight:600"><i class="ph ph-check-circle"></i> Active</span>
+          {% endif %}
+        </td>
+        <td style="color:var(--text-secondary);font-size:.8rem;white-space:nowrap">
+          {{ u.created_at.strftime('%d %b %Y') }}
+        </td>
+        <td>
+          <div style="display:flex;gap:.35rem;align-items:center">
+            <a href="{{ url_for('admin_user_detail', uid=u.id) }}" class="btn-admin-sm btn-view">
+              <i class="ph ph-eye"></i>
+            </a>
+            <form method="POST" action="{{ url_for('admin_ban_user', uid=u.id) }}" style="display:inline" onsubmit="return confirm('Are you sure?')">
+              {% if u.is_banned %}
+              <input type="hidden" name="action" value="unban">
+              <button type="submit" class="btn-admin-sm btn-unban" title="Unban"><i class="ph ph-check-circle"></i></button>
+              {% else %}
+              <input type="hidden" name="action" value="ban">
+              <button type="submit" class="btn-admin-sm btn-ban" title="Ban"><i class="ph ph-prohibit"></i></button>
+              {% endif %}
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="admin-empty">
+    <i class="ph ph-users"></i>
+    <p>No users found{% if search %} for "{{ search }}"{% endif %}.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

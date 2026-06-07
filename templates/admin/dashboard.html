@@ -1,0 +1,268 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Admin Dashboard — Local Help Connect{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Platform overview at a glance{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stat Cards -->
+<div class="stat-grid">
+  <div class="stat-card-admin">
+    <div class="stat-icon blue"><i class="ph-fill ph-users"></i></div>
+    <div class="stat-num">{{ stats.total_users }}</div>
+    <div class="stat-label">Total Users</div>
+  </div>
+  <div class="stat-card-admin">
+    <div class="stat-icon green"><i class="ph-fill ph-hard-hat"></i></div>
+    <div class="stat-num">{{ stats.total_workers }}</div>
+    <div class="stat-label">Workers</div>
+  </div>
+  <div class="stat-card-admin">
+    <div class="stat-icon teal"><i class="ph-fill ph-user-circle"></i></div>
+    <div class="stat-num">{{ stats.total_customers }}</div>
+    <div class="stat-label">Customers</div>
+  </div>
+  <div class="stat-card-admin">
+    <div class="stat-icon purple"><i class="ph-fill ph-briefcase"></i></div>
+    <div class="stat-num">{{ stats.total_jobs }}</div>
+    <div class="stat-label">Job Requests</div>
+  </div>
+  <div class="stat-card-admin">
+    <div class="stat-icon amber"><i class="ph-fill ph-seal-check"></i></div>
+    <div class="stat-num">{{ stats.completed_jobs }}</div>
+    <div class="stat-label">Completed Jobs</div>
+  </div>
+  <div class="stat-card-admin">
+    <div class="stat-icon indigo"><i class="ph-fill ph-clipboard-text"></i></div>
+    <div class="stat-num">{{ stats.open_posted_jobs }}</div>
+    <div class="stat-label">Open Posted Jobs</div>
+  </div>
+  <div class="stat-card-admin">
+    <div class="stat-icon pink"><i class="ph-fill ph-star"></i></div>
+    <div class="stat-num">{{ stats.total_ratings }}</div>
+    <div class="stat-label">Ratings Given</div>
+  </div>
+  <div class="stat-card-admin">
+    <div class="stat-icon red"><i class="ph-fill ph-prohibit"></i></div>
+    <div class="stat-num">{{ stats.banned_users }}</div>
+    <div class="stat-label">Banned Users</div>
+  </div>
+</div>
+
+<!-- Chart + Recent Users -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+
+  <!-- Monthly Jobs Chart -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <span class="admin-card-title"><i class="ph ph-chart-bar"></i> Job Requests (Last 6 Months)</span>
+    </div>
+    <div class="chart-container" style="height:220px;position:relative">
+      <canvas id="jobsChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Platform Health -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <span class="admin-card-title"><i class="ph ph-activity"></i> Platform Health</span>
+    </div>
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:.75rem">
+      {% set completion_rate = ((stats.completed_jobs / stats.total_jobs * 100) | int) if stats.total_jobs > 0 else 0 %}
+      {% set worker_ratio = ((stats.total_workers / stats.total_users * 100) | int) if stats.total_users > 0 else 0 %}
+      {% set ban_rate = ((stats.banned_users / stats.total_users * 100) | round(1)) if stats.total_users > 0 else 0 %}
+
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
+          <span style="color:var(--text-secondary)">Job Completion Rate</span>
+          <span style="font-weight:600;color:#16a34a">{{ completion_rate }}%</span>
+        </div>
+        <div style="height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:{{ completion_rate }}%;background:#16a34a;border-radius:3px"></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
+          <span style="color:var(--text-secondary)">Worker to User Ratio</span>
+          <span style="font-weight:600;color:#2563eb">{{ worker_ratio }}%</span>
+        </div>
+        <div style="height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:{{ worker_ratio }}%;background:#2563eb;border-radius:3px"></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
+          <span style="color:var(--text-secondary)">Ban Rate</span>
+          <span style="font-weight:600;color:{% if ban_rate > 5 %}#dc2626{% else %}#6b7280{% endif %}">{{ ban_rate }}%</span>
+        </div>
+        <div style="height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:{{ [ban_rate, 100]|min }}%;background:#dc2626;border-radius:3px"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:.5rem;padding-top:.75rem;border-top:1px solid #f3f4f6;display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <a href="{{ url_for('admin_users') }}" style="text-decoration:none">
+          <div style="background:#fafbff;border:1px solid #e8eaf0;border-radius:9px;padding:.65rem .85rem;text-align:center">
+            <div style="font-size:1.1rem;font-weight:700;color:#111827">{{ stats.total_users }}</div>
+            <div style="font-size:.72rem;color:#6b7280">Total Users</div>
+          </div>
+        </a>
+        <a href="{{ url_for('admin_jobs') }}" style="text-decoration:none">
+          <div style="background:#fafbff;border:1px solid #e8eaf0;border-radius:9px;padding:.65rem .85rem;text-align:center">
+            <div style="font-size:1.1rem;font-weight:700;color:#111827">{{ stats.total_jobs }}</div>
+            <div style="font-size:.72rem;color:#6b7280">Total Jobs</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Map Geocoding Utility -->
+<div class="admin-card" style="margin-bottom:1.25rem;border-left:4px solid #6366f1">
+  <div class="admin-card-header">
+    <span class="admin-card-title"><i class="ph ph-map-trifold"></i> Map — Geocode Worker Locations</span>
+  </div>
+  <div style="padding:.75rem 1rem 1rem;font-size:.83rem;color:#374151">
+    Workers appear as pins on the map only after their location has been geocoded.
+    New profiles geocode automatically on save. Use this button to backfill
+    existing workers that were registered before the map feature was added.
+    (Respects Nominatim's 1 req/s limit — may take a moment for large datasets.)
+  </div>
+  <div style="padding:0 1rem 1rem">
+    <form method="POST" action="{{ url_for('admin_geocode_backfill') }}"
+          onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='Geocoding…'">
+      <button type="submit"
+        style="background:#6366f1;color:#fff;border:none;border-radius:8px;
+               padding:.5rem 1.1rem;font-size:.82rem;font-weight:700;cursor:pointer">
+        <i class="ph ph-map-pin"></i> Geocode Un-mapped Workers
+      </button>
+    </form>
+    {% if stats.pending_reports > 0 %}
+    <a href="{{ url_for('admin_reports') }}" style="display:inline-flex;align-items:center;gap:.4rem;background:#fee2e2;color:#dc2626;border-radius:8px;padding:.5rem 1.1rem;font-size:.82rem;font-weight:700;text-decoration:none;margin-top:.5rem">
+      <i class="ph ph-warning-octagon"></i> {{ stats.pending_reports }} Pending Report{% if stats.pending_reports != 1 %}s{% endif %}
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent Registrations + Recent Jobs -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+
+  <!-- Recent Users -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <span class="admin-card-title"><i class="ph ph-user-plus"></i> Recent Registrations</span>
+      <a href="{{ url_for('admin_users') }}" class="btn-outline-admin" style="font-size:.78rem">View All <i class="ph ph-arrow-right"></i></a>
+    </div>
+    {% if recent_users %}
+    <table class="admin-table">
+      <thead><tr><th>Name</th><th>Role</th><th>Joined</th></tr></thead>
+      <tbody>
+        {% for u in recent_users %}
+        <tr>
+          <td>
+            <a href="{{ url_for('admin_user_detail', uid=u.id) }}" style="text-decoration:none;color:inherit;font-weight:500">
+              {{ u.full_name }}
+            </a>
+            {% if u.is_banned %}<span class="role-badge banned" style="margin-left:.4rem">Banned</span>{% endif %}
+          </td>
+          <td><span class="role-badge {{ u.role }}">{{ u.role | capitalize }}</span></td>
+          <td style="color:var(--text-secondary);font-size:.8rem">{{ u.created_at.strftime('%d %b') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="admin-empty"><i class="ph ph-users"></i><p>No users yet.</p></div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Job Requests -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <span class="admin-card-title"><i class="ph ph-briefcase"></i> Recent Job Requests</span>
+      <a href="{{ url_for('admin_jobs') }}" class="btn-outline-admin" style="font-size:.78rem">View All <i class="ph ph-arrow-right"></i></a>
+    </div>
+    {% if recent_jobs %}
+    <table class="admin-table">
+      <thead><tr><th>Customer → Worker</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for j in recent_jobs %}
+        <tr>
+          <td>
+            <div style="font-size:.82rem">
+              <span style="font-weight:500">{{ j.customer_name }}</span>
+              <span style="color:var(--text-muted)"> → </span>
+              <span style="font-weight:500">{{ j.worker_name }}</span>
+            </div>
+            <div style="margin-top:.15rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+              <span style="font-family:monospace;background:#eef2ff;color:#4338ca;padding:.08rem .38rem;border-radius:5px;font-size:.68rem;font-weight:700">{{ j.request_code or ('#'+j.id|string) }}</span>
+              {% if j.category %}<span style="font-size:.72rem;color:var(--text-muted)">{{ j.category }}</span>{% endif %}
+            </div>
+          </td>
+          <td>
+            <span class="status-pill {{ j.job_stage or j.status }}">
+              {{ (j.job_stage or j.status) | replace('_', ' ') | capitalize }}
+            </span>
+          </td>
+          <td style="color:var(--text-secondary);font-size:.8rem;white-space:nowrap">{{ j.created_at.strftime('%d %b') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="admin-empty"><i class="ph ph-briefcase"></i><p>No job requests yet.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const monthlyData = {{ monthly_jobs | tojson }};
+  const labels  = monthlyData.map(d => d.month);
+  const counts  = monthlyData.map(d => d.count);
+
+  const ctx = document.getElementById('jobsChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Job Requests',
+        data: counts,
+        backgroundColor: 'rgba(124,58,237,0.15)',
+        borderColor: '#7c3aed',
+        borderWidth: 2,
+        borderRadius: 6,
+        hoverBackgroundColor: 'rgba(124,58,237,0.28)',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          padding: 10,
+          titleFont: { family: 'Syne', size: 13 },
+          bodyFont: { family: 'DM Sans', size: 12 },
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 }, stepSize: 1 }, beginAtZero: true }
+      }
+    }
+  });
+</script>
+{% endblock %}

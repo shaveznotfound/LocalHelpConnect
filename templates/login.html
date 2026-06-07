@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Login — Local Help Connect{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-split">
+
+    <!-- Left Panel -->
+    <div class="auth-left">
+      <div class="auth-left-content">
+        <a href="{{ url_for('index') }}" class="auth-back">
+          <i class="ph ph-arrow-left"></i> Back to Home
+        </a>
+        <div class="auth-brand">
+          <span class="brand-icon big"><i class="ph-fill ph-wrench"></i></span>
+          <span class="brand-text big">Local<span class="brand-accent">Help</span></span>
+        </div>
+        <h2 class="auth-left-title">Welcome back</h2>
+        <p class="auth-left-sub">
+          Sign in to manage your job requests, connect with workers, and track everything in one place.
+        </p>
+        <div class="auth-feature-list">
+          <div class="auth-feature"><i class="ph-fill ph-check-circle"></i> Instant job tracking</div>
+          <div class="auth-feature"><i class="ph-fill ph-check-circle"></i> Trusted local workers</div>
+          <div class="auth-feature"><i class="ph-fill ph-check-circle"></i> Secure & private</div>
+        </div>
+        <p class="auth-switch">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+      </div>
+    </div>
+
+    <!-- Right Panel (Form) -->
+    <div class="auth-right">
+      <div class="auth-card">
+        <div class="auth-card-header">
+          <h1>Sign In</h1>
+          <p>Enter your credentials to access your account</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('login') }}" class="auth-form" id="loginForm" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="phone">
+              <i class="ph ph-phone"></i> Phone Number
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              class="form-input"
+              placeholder="e.g. 9876543210"
+              required
+              autocomplete="tel"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">
+              <i class="ph ph-lock"></i> Password
+            </label>
+            <div class="input-with-toggle">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-input"
+                placeholder="Your password"
+                required
+                autocomplete="current-password"
+              >
+              <button type="button" class="toggle-pwd" onclick="togglePassword('password', this)">
+                <i class="ph ph-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-auth-submit" id="loginBtn">
+            <span class="btn-text"><i class="ph ph-sign-in"></i> Sign In</span>
+            <span class="btn-loading d-none"><i class="ph ph-circle-notch ph-spin"></i> Signing in...</span>
+          </button>
+
+          <p class="form-footer-link">
+            New here? <a href="{{ url_for('register') }}">Create an account</a>
+          </p>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassword(fieldId, btn) {
+  const field = document.getElementById(fieldId);
+  const icon = btn.querySelector('i');
+  if (field.type === 'password') {
+    field.type = 'text';
+    icon.className = 'ph ph-eye-slash';
+  } else {
+    field.type = 'password';
+    icon.className = 'ph ph-eye';
+  }
+}
+
+document.getElementById('loginForm').addEventListener('submit', function() {
+  const btn = document.getElementById('loginBtn');
+  btn.querySelector('.btn-text').classList.add('d-none');
+  btn.querySelector('.btn-loading').classList.remove('d-none');
+  btn.disabled = true;
+});
+</script>
+{% endblock %}

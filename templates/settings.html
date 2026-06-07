@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Settings — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<style>
+.settings-page{min-height:calc(100vh - 70px);background:#f4f6fb;padding:2rem 1rem 3rem}
+.settings-wrap{max-width:780px;margin:0 auto}
+.settings-header{margin-bottom:1.5rem}
+.settings-header h1{font-size:1.5rem;font-weight:800;color:#1e1b4b;margin:0}
+.settings-header p{color:#6b7280;font-size:.85rem;margin:.3rem 0 0}
+.scard{background:#fff;border-radius:18px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f0f0f5;margin-bottom:1.5rem}
+.scard-title{font-size:1rem;font-weight:700;color:#1e1b4b;display:flex;align-items:center;gap:.5rem;margin-bottom:1.2rem}
+/* Avatar section */
+.avatar-section{display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap}
+.av-preview{position:relative;width:80px;height:80px;border-radius:50%;overflow:hidden;flex-shrink:0}
+.av-preview img,.av-preview .av-initials{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av-initials{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:2rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+.av-edit-badge{position:absolute;bottom:2px;right:2px;width:22px;height:22px;background:#6366f1;border-radius:50%;color:#fff;font-size:.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #fff}
+.av-info{flex:1}
+.av-info h3{font-size:.95rem;font-weight:700;color:#1e1b4b;margin:0 0 .2rem}
+.av-info p{font-size:.78rem;color:#6b7280;margin:0 0 .75rem}
+.btn-avatar{display:inline-flex;align-items:center;gap:.35rem;padding:.45rem .9rem;background:#eef2ff;color:#4338ca;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;border:none;transition:background .15s}
+.btn-avatar:hover{background:#e0e7ff}
+#avatarInput{display:none}
+/* Form fields */
+.form-row{margin-bottom:1rem}
+label{display:block;font-size:.82rem;font-weight:600;color:#374151;margin-bottom:.4rem}
+.form-input{width:100%;padding:.6rem .9rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.9rem;font-family:inherit;outline:none;transition:border-color .2s;background:#fff}
+.form-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.form-row-2{grid-template-columns:1fr}}
+.form-hint{font-size:.73rem;color:#9ca3af;margin-top:.3rem}
+.btn-save{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.3rem;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:.88rem;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-save:hover{opacity:.88}
+/* Info row */
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:.7rem 0;border-bottom:1px solid #f3f4f6}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:.8rem;color:#6b7280}
+.info-value{font-size:.88rem;font-weight:600;color:#1f2937}
+.role-badge{display:inline-block;padding:.15rem .55rem;border-radius:999px;font-size:.72rem;font-weight:700;background:#eef2ff;color:#4338ca}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+  <div class="settings-wrap">
+    <div class="settings-header">
+      <h1><i class="ph ph-gear" style="color:#6366f1"></i> Account Settings</h1>
+      <p>Manage your profile, avatar, and security settings.</p>
+    </div>
+
+    <!-- Profile Picture -->
+    <div class="scard">
+      <div class="scard-title"><i class="ph ph-user-circle" style="color:#6366f1"></i> Profile Picture</div>
+      <div class="avatar-section">
+        <div class="av-preview">
+          {% if user.avatar_url %}
+            <img src="{{ user.avatar_url }}" alt="avatar" id="avImg">
+          {% else %}
+            <div class="av-initials" id="avInitials">{{ user.full_name[0].upper() }}</div>
+          {% endif %}
+          <span class="av-edit-badge" onclick="document.getElementById('avatarInput').click()" title="Change photo"><i class="ph ph-pencil-simple"></i></span>
+        </div>
+        <div class="av-info">
+          <h3>{{ user.full_name }}</h3>
+          <p>JPG, PNG or WEBP · Max 10MB · Square image recommended</p>
+          <form method="POST" action="{{ url_for('upload_avatar') }}" enctype="multipart/form-data" id="avatarForm">
+            <input type="file" id="avatarInput" name="avatar" accept="image/*" onchange="previewAvatar(this)">
+            <button type="button" class="btn-avatar" onclick="document.getElementById('avatarInput').click()">
+              <i class="ph ph-camera"></i> Change Photo
+            </button>
+            <button type="submit" class="btn-avatar" id="avSaveBtn" style="display:none;background:#6366f1;color:#fff;margin-left:.5rem">
+              <i class="ph ph-floppy-disk"></i> Save Photo
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Info -->
+    <div class="scard">
+      <div class="scard-title"><i class="ph ph-identification-card" style="color:#6366f1"></i> Account Info</div>
+      <div class="info-row"><span class="info-label">Phone</span><span class="info-value">{{ user.phone }}</span></div>
+      <div class="info-row"><span class="info-label">Role</span><span class="info-value"><span class="role-badge">{{ user.role | capitalize }}</span></span></div>
+      <div class="info-row"><span class="info-label">Member Since</span><span class="info-value">{{ user.created_at.strftime('%d %b %Y') if user.created_at else '—' }}</span></div>
+    </div>
+
+    <!-- Update Info -->
+    <div class="scard">
+      <div class="scard-title"><i class="ph ph-pencil-simple" style="color:#6366f1"></i> Update Information</div>
+      <form method="POST">
+        <input type="hidden" name="action" value="update_info">
+        <div class="form-row-2">
+          <div class="form-row">
+            <label>Full Name</label>
+            <input type="text" name="full_name" class="form-input" value="{{ user.full_name }}" required>
+          </div>
+          <div class="form-row">
+            <label>Email Address</label>
+            <input type="email" name="email" class="form-input" value="{{ user.email or '' }}" placeholder="Optional">
+          </div>
+        </div>
+        <button type="submit" class="btn-save"><i class="ph ph-floppy-disk"></i> Save Changes</button>
+      </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="scard">
+      <div class="scard-title"><i class="ph ph-lock-key" style="color:#6366f1"></i> Change Password</div>
+      <form method="POST">
+        <input type="hidden" name="action" value="change_password">
+        <div class="form-row">
+          <label>Current Password</label>
+          <input type="password" name="current_password" class="form-input" required>
+        </div>
+        <div class="form-row-2">
+          <div class="form-row">
+            <label>New Password</label>
+            <input type="password" name="new_password" class="form-input" required minlength="6">
+            <div class="form-hint">Minimum 6 characters</div>
+          </div>
+          <div class="form-row">
+            <label>Confirm New Password</label>
+            <input type="password" name="confirm_new_password" class="form-input" required minlength="6">
+          </div>
+        </div>
+        <button type="submit" class="btn-save"><i class="ph ph-lock-key"></i> Update Password</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewAvatar(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const initials = document.getElementById('avInitials');
+    let img = document.getElementById('avImg');
+    if (initials) initials.style.display = 'none';
+    if (!img) {
+      img = document.createElement('img');
+      img.id = 'avImg';
+      img.alt = 'avatar';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+      document.querySelector('.av-preview').prepend(img);
+    }
+    img.src = e.target.result;
+    document.getElementById('avSaveBtn').style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Ratings — Admin{% endblock %}
+{% block page_title %}Ratings & Reviews{% endblock %}
+{% block page_subtitle %}{{ ratings | length }} total ratings{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <div class="admin-card-header">
+    <span class="admin-card-title"><i class="ph ph-star"></i> All Ratings & Reviews</span>
+    {% if ratings %}
+    {% set total = ratings | length %}
+    {% set avg = (ratings | map(attribute='rating') | sum / total) | round(2) %}
+    <div style="display:flex;align-items:center;gap:.5rem;font-size:.85rem">
+      <span style="color:#f59e0b;font-size:1rem">★</span>
+      <strong>{{ avg }}</strong>
+      <span style="color:var(--text-secondary)">avg across {{ total }} reviews</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if ratings %}
+  <table class="admin-table">
+    <thead>
+      <tr><th>#</th><th>Worker</th><th>Customer</th><th>Overall</th><th>Punctuality</th><th>Quality</th><th>Communication</th><th>Review</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for r in ratings %}
+      <tr>
+        <td style="color:var(--text-muted);font-size:.78rem">{{ r.id }}</td>
+        <td style="font-weight:500;font-size:.85rem">{{ r.worker_name }}</td>
+        <td style="font-size:.85rem;color:var(--text-secondary)">{{ r.customer_name }}</td>
+        <td>
+          <div class="star-display" style="white-space:nowrap;font-size:.85rem">
+            {% for i in range(r.rating) %}★{% endfor %}<span style="color:#d1d5db">{% for i in range(5-r.rating) %}★{% endfor %}</span>
+            <strong style="margin-left:.25rem;color:#374151">{{ r.rating }}/5</strong>
+          </div>
+        </td>
+        {% for sub in [r.rating_punctuality, r.rating_quality, r.rating_communication] %}
+        <td style="font-size:.82rem;text-align:center">
+          {% if sub %}
+          <span style="color:{{ '#16a34a' if sub>=4 else '#f59e0b' if sub==3 else '#dc2626' }};font-weight:600">{{ sub }}/5</span>
+          {% else %}<em style="color:#d1d5db">—</em>{% endif %}
+        </td>
+        {% endfor %}
+        <td style="font-size:.78rem;color:var(--text-secondary);max-width:180px">
+          {% if r.review %}{{ r.review[:70] }}{% if r.review|length > 70 %}…{% endif %}
+          {% else %}<em style="color:var(--text-muted)">—</em>{% endif %}
+        </td>
+        <td style="font-size:.78rem;color:var(--text-secondary);white-space:nowrap">{{ r.created_at.strftime('%d %b %Y') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="admin-empty"><i class="ph ph-star"></i><p>No ratings have been submitted yet.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

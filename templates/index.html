@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Local Help Connect — Find Trusted Workers Near You{% endblock %}
+
+{% block content %}
+
+<!-- ─── HERO ────────────────────────────────────────────────────────────── -->
+<section class="hero-section">
+  <div class="hero-bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <div class="hero-container">
+    <div class="hero-badge"><i class="ph ph-seal-check"></i> Verified Local Workers</div>
+    <h1 class="hero-headline">
+      Find Skilled Help<br>
+      <span class="headline-accent">Right in Your Area</span>
+    </h1>
+    <p class="hero-sub">
+      Connect with trusted electricians, plumbers, carpenters and more —
+      vetted workers, transparent requests, real results.
+    </p>
+    <div class="hero-cta">
+      <a href="{{ url_for('register') }}" class="btn-hero-primary">
+        <i class="ph ph-rocket-launch"></i> Get Started Free
+      </a>
+      <a href="{{ url_for('search_workers') }}" class="btn-hero-outline">
+        <i class="ph ph-users-three"></i> Find Workers
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num">500+</span>
+        <span class="stat-label">Workers</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">2,000+</span>
+        <span class="stat-label">Jobs Done</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">15+</span>
+        <span class="stat-label">Categories</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-card-float card-1">
+      <i class="ph-fill ph-lightning"></i>
+      <span>Electrician</span>
+    </div>
+    <div class="hero-card-float card-2">
+      <i class="ph-fill ph-drop"></i>
+      <span>Plumber</span>
+    </div>
+    <div class="hero-card-float card-3">
+      <i class="ph-fill ph-hammer"></i>
+      <span>Carpenter</span>
+    </div>
+    <div class="hero-card-float card-4">
+      <i class="ph-fill ph-paint-roller"></i>
+      <span>Painter</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ────────────────────────────────────────────────────── -->
+<section class="how-section">
+  <div class="section-container">
+    <div class="section-header">
+      <span class="section-eyebrow">Simple Process</span>
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-sub">Get connected with the right worker in three easy steps</p>
+    </div>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-number">01</div>
+        <div class="how-icon"><i class="ph-fill ph-user-plus"></i></div>
+        <h3>Create Account</h3>
+        <p>Register as a customer or worker. Quick, free, and secure.</p>
+      </div>
+      <div class="how-connector"><i class="ph ph-arrow-right"></i></div>
+      <div class="how-card">
+        <div class="how-number">02</div>
+        <div class="how-icon"><i class="ph-fill ph-magnifying-glass"></i></div>
+        <h3>Find or Post</h3>
+        <p>Search skilled workers or post your job. Filter by skill and location.</p>
+      </div>
+      <div class="how-connector"><i class="ph ph-arrow-right"></i></div>
+      <div class="how-card">
+        <div class="how-number">03</div>
+        <div class="how-icon"><i class="ph-fill ph-handshake"></i></div>
+        <h3>Get It Done</h3>
+        <p>Send a hire request, track its status, and get the work done.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CATEGORIES ──────────────────────────────────────────────────────── -->
+<section class="categories-section">
+  <div class="section-container">
+    <div class="section-header">
+      <span class="section-eyebrow">What We Cover</span>
+      <h2 class="section-title">Popular Categories</h2>
+    </div>
+    <div class="categories-grid">
+      <a href="{{ url_for('search_workers') }}?skill=Electrical" class="cat-card cat-link"><i class="ph-fill ph-lightning"></i><span>Electrical</span></a>
+      <a href="{{ url_for('search_workers') }}?skill=Plumbing" class="cat-card cat-link"><i class="ph-fill ph-drop"></i><span>Plumbing</span></a>
+      <a href="{{ url_for('search_workers') }}?skill=Carpentry" class="cat-card cat-link"><i class="ph-fill ph-hammer"></i><span>Carpentry</span></a>
+      <a href="{{ url_for('search_workers') }}?skill=Painting" class="cat-card cat-link"><i class="ph-fill ph-paint-roller"></i><span>Painting</span></a>
+      <a href="{{ url_for('search_workers') }}?skill=Repair" class="cat-card cat-link"><i class="ph-fill ph-wrench"></i><span>Repair</span></a>
+      <a href="{{ url_for('search_workers') }}?skill=Cleaning" class="cat-card cat-link"><i class="ph-fill ph-house-line"></i><span>Cleaning</span></a>
+      <a href="{{ url_for('search_workers') }}?skill=Gardening" class="cat-card cat-link"><i class="ph-fill ph-leaf"></i><span>Gardening</span></a>
+      <a href="{{ url_for('search_workers') }}?skill=Appliances" class="cat-card cat-link"><i class="ph-fill ph-gear"></i><span>Appliances</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WHY US ──────────────────────────────────────────────────────────── -->
+<section class="why-section">
+  <div class="section-container">
+    <div class="section-header">
+      <span class="section-eyebrow">Why Choose Us</span>
+      <h2 class="section-title">Built for Trust</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon why-blue"><i class="ph-fill ph-shield-check"></i></div>
+        <h3>Verified Profiles</h3>
+        <p>Every worker profile is registered with a verified phone number.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon why-purple"><i class="ph-fill ph-clock-countdown"></i></div>
+        <h3>Real-Time Tracking</h3>
+        <p>Track your job requests live — pending, accepted, or completed.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon why-green"><i class="ph-fill ph-currency-circle-dollar"></i></div>
+        <h3>Free to Use</h3>
+        <p>No commission, no hidden fees. Connect directly with workers.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon why-orange"><i class="ph-fill ph-map-pin"></i></div>
+        <h3>Local First</h3>
+        <p>Find workers in your city, neighborhood, or nearby area.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA BANNER ──────────────────────────────────────────────────────── -->
+<section class="cta-section">
+  <div class="cta-container">
+    <h2 class="cta-title">Ready to Get Started?</h2>
+    <p class="cta-sub">Join hundreds of workers and customers already using Local Help Connect.</p>
+    <div class="cta-buttons">
+      <a href="{{ url_for('register') }}?role=customer" class="btn-cta-primary">
+        <i class="ph ph-user"></i> I Need Help
+      </a>
+      <a href="{{ url_for('register') }}?role=worker" class="btn-cta-secondary">
+        <i class="ph ph-briefcase"></i> I'm a Worker
+      </a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

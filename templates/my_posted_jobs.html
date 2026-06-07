@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}My Posted Jobs — Local Help Connect{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <div class="inner-container">
+
+    <div class="inner-header">
+      <div>
+        <h1 class="inner-title"><i class="ph ph-briefcase"></i> My Posted Jobs</h1>
+        <p class="inner-sub">Jobs you've posted publicly for workers to find</p>
+      </div>
+      <a href="{{ url_for('post_job') }}" class="btn-dash-primary">
+        <i class="ph ph-plus"></i> Post New Job
+      </a>
+    </div>
+
+    {% if jobs %}
+    <div class="job-board-list">
+      {% for job in jobs %}
+      <div class="job-board-card {% if job.status == 'closed' %}job-closed{% endif %}">
+        <div class="jbc-header">
+          <div class="jbc-title-area">
+            {% if job.category %}<span class="jbc-category-badge">{{ job.category }}</span>{% endif %}
+            <h3 class="jbc-title">{{ job.title }}</h3>
+          </div>
+          <div class="jbc-status-area">
+            <span class="status-badge {% if job.status == 'open' %}status-accepted{% else %}status-rejected{% endif %}">
+              {% if job.status == 'open' %}<i class="ph ph-check-circle"></i>{% else %}<i class="ph ph-x-circle"></i>{% endif %}
+              {{ job.status | capitalize }}
+            </span>
+            <span class="jbc-date"><i class="ph ph-calendar"></i> {{ job.created_at.strftime('%d %b %Y') }}</span>
+          </div>
+        </div>
+        <p class="jbc-description">{{ job.description }}</p>
+        <div class="jbc-footer">
+          <span class="jbc-meta-item"><i class="ph ph-map-pin"></i> {{ job.location }}</span>
+          {% if job.status == 'open' %}
+          <form method="POST" action="{{ url_for('close_job', job_id=job.id) }}" class="d-inline"
+            onsubmit="return confirm('Close this job listing?')">
+            <button type="submit" class="btn-close-job">
+              <i class="ph ph-x-circle"></i> Close Job
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state big">
+      <div class="empty-icon"><i class="ph ph-clipboard-text"></i></div>
+      <h3>No posted jobs yet</h3>
+      <p>Post a job listing so workers can find and contact you directly.</p>
+      <a href="{{ url_for('post_job') }}" class="btn-dash-primary">Post a Job</a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

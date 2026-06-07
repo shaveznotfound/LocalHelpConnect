@@ -1,0 +1,52 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Posted Jobs — Admin{% endblock %}
+{% block page_title %}Posted Jobs{% endblock %}
+{% block page_subtitle %}{{ jobs | length }} result(s){% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <div class="admin-card-header">
+    <span class="admin-card-title"><i class="ph ph-clipboard-text"></i> All Posted Jobs</span>
+    <form method="GET" class="filter-bar">
+      <select name="status" class="filter-select">
+        <option value="">All statuses</option>
+        <option value="open"   {% if status_filter == 'open'   %}selected{% endif %}>Open</option>
+        <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+      </select>
+      <button type="submit" class="filter-btn"><i class="ph ph-funnel"></i> Filter</button>
+      {% if status_filter %}
+      <a href="{{ url_for('admin_posted_jobs') }}" class="btn-outline-admin">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if jobs %}
+  <table class="admin-table">
+    <thead>
+      <tr><th>#</th><th>Title</th><th>Customer</th><th>Category</th><th>Location</th><th>Status</th><th>Posted</th></tr>
+    </thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td style="color:var(--text-muted);font-size:.78rem">{{ j.id }}</td>
+        <td>
+          <div style="font-weight:500;font-size:.85rem">{{ j.title }}</div>
+          <div style="font-size:.75rem;color:var(--text-muted)">{{ j.description[:60] }}{% if j.description|length > 60 %}…{% endif %}</div>
+        </td>
+        <td>
+          <div style="font-size:.85rem;font-weight:500">{{ j.customer_name }}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);font-family:monospace">{{ j.customer_phone }}</div>
+        </td>
+        <td style="font-size:.82rem;color:var(--text-secondary)">{{ j.category or '—' }}</td>
+        <td style="font-size:.8rem;color:var(--text-secondary)">{{ j.location[:25] }}{% if j.location|length > 25 %}…{% endif %}</td>
+        <td><span class="status-pill {{ j.status }}">{{ j.status | capitalize }}</span></td>
+        <td style="font-size:.8rem;color:var(--text-secondary);white-space:nowrap">{{ j.created_at.strftime('%d %b %Y') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="admin-empty"><i class="ph ph-clipboard-text"></i><p>No posted jobs found.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

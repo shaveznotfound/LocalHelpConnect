@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Post a Job — Local Help Connect{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <div class="inner-container narrow">
+
+    <div class="inner-header">
+      <div>
+        <h1 class="inner-title"><i class="ph ph-plus-circle"></i> Post a Job</h1>
+        <p class="inner-sub">Describe what you need and workers can reach out to you</p>
+      </div>
+      <a href="{{ url_for('dashboard') }}" class="btn-back">
+        <i class="ph ph-arrow-left"></i> Dashboard
+      </a>
+    </div>
+
+    <div class="form-card">
+      <form method="POST" action="{{ url_for('post_job') }}" id="postJobForm">
+
+        <div class="form-group">
+          <label class="form-label" for="title">
+            <i class="ph ph-textbox"></i> Job Title <span class="required">*</span>
+          </label>
+          <input type="text" id="title" name="title" class="form-input"
+            placeholder="e.g. Need electrician for rewiring" required>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="category">
+              <i class="ph ph-tag"></i> Category
+            </label>
+            <select id="category" name="category" class="form-input form-select">
+              <option value="">— Select Category —</option>
+              {% for cat in CATEGORIES %}
+              <option value="{{ cat }}">{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="location">
+              <i class="ph ph-map-pin"></i> Location <span class="required">*</span>
+            </label>
+            <input type="text" id="location" name="location" class="form-input"
+              placeholder="e.g. Sector 29, Gurugram" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">
+            <i class="ph ph-text-align-left"></i> Description <span class="required">*</span>
+          </label>
+          <textarea id="description" name="description" class="form-textarea"
+            rows="5" placeholder="Describe the job in detail. Include what's broken, what you expect, timeline, etc."
+            required></textarea>
+        </div>
+
+        <button type="submit" class="btn-auth-submit">
+          <i class="ph ph-paper-plane-tilt"></i> Post Job
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

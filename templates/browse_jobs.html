@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Browse Jobs — Local Help Connect{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <div class="inner-container">
+
+    <div class="search-hero">
+      <h1>Browse Open Jobs <span class="accent">Near You</span></h1>
+      <p>Jobs posted by customers looking for skilled workers like you</p>
+
+      <form method="GET" action="{{ url_for('browse_jobs') }}" class="search-bar-form">
+        <div class="search-bar">
+          <div class="search-field">
+            <i class="ph ph-tag"></i>
+            <select name="category" class="search-input" style="background:transparent;border:none;outline:none;">
+              <option value="">All Categories</option>
+              {% for cat in CATEGORIES %}
+              <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="search-divider"></div>
+          <div class="search-field">
+            <i class="ph ph-map-pin"></i>
+            <input type="text" name="location" placeholder="Filter by location"
+              value="{{ location }}" class="search-input">
+          </div>
+          <button type="submit" class="search-submit-btn">
+            <i class="ph ph-magnifying-glass"></i><span>Filter</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {% if jobs %}
+    <div class="results-meta">{{ jobs|length }} open job{% if jobs|length != 1 %}s{% endif %} found</div>
+    <div class="job-board-list">
+      {% for job in jobs %}
+      <div class="job-board-card">
+        <div class="jbc-header">
+          <div class="jbc-title-area">
+            {% if job.category %}
+            <span class="jbc-category-badge">{{ job.category }}</span>
+            {% endif %}
+            <h3 class="jbc-title">{{ job.title }}</h3>
+          </div>
+          <span class="jbc-date">
+            <i class="ph ph-calendar"></i>
+            {{ job.created_at.strftime('%d %b %Y') }}
+          </span>
+        </div>
+        <p class="jbc-description">{{ job.description }}</p>
+        <div class="jbc-footer">
+          <div class="jbc-meta">
+            <span><i class="ph ph-map-pin"></i> {{ job.location }}</span>
+            <span><i class="ph ph-user"></i> {{ job.customer_name }}</span>
+          </div>
+          <a href="tel:{{ job.customer_phone }}" class="btn-contact-customer">
+            <i class="ph ph-phone"></i> Contact Customer
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state big">
+      <div class="empty-icon"><i class="ph ph-briefcase"></i></div>
+      <h3>No open jobs found</h3>
+      <p>Check back soon or adjust your filters.</p>
+      <a href="{{ url_for('browse_jobs') }}" class="btn-dash-primary">Show All Jobs</a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

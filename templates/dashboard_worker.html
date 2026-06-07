@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}Worker Dashboard — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<style>
+.db-page{min-height:calc(100vh - 70px);background:#f4f6fb;padding:2rem 1rem 3rem}
+.db-wrap{max-width:1100px;margin:0 auto}
+.db-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem}
+.db-header-left{display:flex;align-items:center;gap:1rem}
+.db-user-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid #e0e7ff}
+.db-user-initials{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:1.4rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+.db-greeting{font-size:1.4rem;font-weight:800;color:#1e1b4b;margin:0}
+.db-sub{font-size:.84rem;color:#6b7280;margin:.2rem 0 0}
+.db-header-actions{display:flex;gap:.6rem;flex-wrap:wrap}
+.btn-db-primary{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:10px;font-weight:700;font-size:.85rem;text-decoration:none;transition:opacity .2s}
+.btn-db-primary:hover{opacity:.88;color:#fff}
+.btn-db-outline{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;background:#fff;color:#6366f1;border:1.5px solid #6366f1;border-radius:10px;font-weight:700;font-size:.85rem;text-decoration:none;transition:all .2s}
+.btn-db-outline:hover{background:#eef2ff;color:#6366f1}
+/* Profile alert */
+.profile-alert{display:flex;align-items:center;gap:.9rem;background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:1rem 1.2rem;margin-bottom:1.5rem}
+.profile-alert>i{font-size:1.5rem;color:#d97706;flex-shrink:0}
+.profile-alert strong{font-size:.88rem;color:#92400e;display:block}
+.profile-alert p{font-size:.78rem;color:#78350f;margin:0}
+.btn-alert{display:inline-flex;align-items:center;gap:.3rem;padding:.4rem .9rem;background:#d97706;color:#fff;border-radius:8px;font-size:.8rem;font-weight:700;text-decoration:none;white-space:nowrap;margin-left:auto}
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:1rem;margin-bottom:1.5rem}
+.scard{background:#fff;border-radius:16px;padding:1.2rem 1.3rem;display:flex;align-items:center;gap:.9rem;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f0f0f5;transition:transform .2s}
+.scard:hover{transform:translateY(-2px)}
+.scard-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.sc-total .scard-icon{background:#fef3c7;color:#d97706}
+.sc-pending .scard-icon{background:#fffbeb;color:#f59e0b}
+.sc-done .scard-icon{background:#f0fdf4;color:#16a34a}
+.sc-rating .scard-icon{background:#eef2ff;color:#6366f1}
+.sc-month .scard-icon{background:#fdf4ff;color:#a21caf}
+.sc-rejected .scard-icon{background:#fef2f2;color:#dc2626}
+.scard-num{display:block;font-size:1.6rem;font-weight:800;color:#1e1b4b;line-height:1}
+.scard-label{font-size:.72rem;color:#6b7280;font-weight:500;margin-top:.2rem}
+/* Badge banner */
+.badge-banner{background:#fff;border-radius:14px;padding:1rem 1.4rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #e8eaf0;flex-wrap:wrap}
+/* Layout */
+.db-grid{display:grid;grid-template-columns:1fr 360px;gap:1.5rem;align-items:start}
+@media(max-width:900px){.db-grid{grid-template-columns:1fr}}
+.db-card{background:#fff;border-radius:18px;padding:1.4rem;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f0f0f5;margin-bottom:1.5rem}
+.db-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.db-card-title{font-size:1rem;font-weight:700;color:#1e1b4b;display:flex;align-items:center;gap:.5rem}
+.db-card-link{font-size:.8rem;color:#6366f1;font-weight:600;text-decoration:none}
+/* Request items */
+.req-item{display:flex;align-items:flex-start;gap:.85rem;padding:.85rem 0;border-bottom:1px solid #f3f4f6}
+.req-item:last-child{border-bottom:none}
+.req-av{width:38px;height:38px;border-radius:50%;background:#e0e7ff;color:#6366f1;font-size:.95rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.req-av img{width:100%;height:100%;object-fit:cover}
+.req-body{flex:1;min-width:0}
+.req-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.2rem}
+.req-name{font-weight:600;font-size:.88rem;color:#1f2937;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.req-code{font-size:.68rem;font-family:monospace;background:#eef2ff;color:#4338ca;padding:.1rem .4rem;border-radius:5px;font-weight:600;white-space:nowrap}
+.req-desc{font-size:.78rem;color:#6b7280;margin-bottom:.25rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.req-meta-row{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.req-meta-row span{font-size:.72rem;color:#9ca3af;display:flex;align-items:center;gap:.2rem}
+.req-actions{display:flex;gap:.4rem;margin-top:.5rem}
+.btn-accept{display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .8rem;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:.77rem;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-accept:hover{opacity:.85}
+.btn-reject{display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .8rem;background:#ef4444;color:#fff;border:none;border-radius:8px;font-size:.77rem;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-reject:hover{opacity:.85}
+.status-pill{font-size:.68rem;font-weight:700;padding:.18rem .6rem;border-radius:999px;white-space:nowrap}
+.pill-pending{background:#fffbeb;color:#92400e}
+.pill-accepted{background:#ecfdf5;color:#065f46}
+.pill-rejected{background:#fef2f2;color:#991b1b}
+/* Quick links */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.quick-card{display:flex;flex-direction:column;align-items:flex-start;gap:.3rem;padding:1rem;background:#f8f9ff;border:1.5px solid #e8eaf0;border-radius:14px;text-decoration:none;transition:all .2s}
+.quick-card:hover{background:#eef2ff;border-color:#c7d2fe;transform:translateY(-1px)}
+.quick-card i{font-size:1.4rem;color:#f59e0b}
+.quick-card span{font-size:.82rem;font-weight:600;color:#1f2937}
+/* Skills preview */
+.skill-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem}
+.skill-chip{font-size:.72rem;background:#f3f4f6;color:#374151;border-radius:999px;padding:.2rem .6rem;font-weight:600}
+/* Performance bars */
+.perf-row{margin-bottom:.75rem}
+.perf-label{display:flex;justify-content:space-between;font-size:.77rem;color:#374151;font-weight:600;margin-bottom:.25rem}
+.perf-bar{height:7px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+.perf-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#6366f1,#8b5cf6);transition:width .6s ease}
+.empty-box{text-align:center;padding:2rem 1rem;color:#9ca3af}
+.empty-box i{font-size:2.5rem;color:#d1d5db;margin-bottom:.5rem}
+.empty-box p{font-size:.82rem;margin:.4rem 0 1rem}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="db-page">
+  <div class="db-wrap">
+
+    <!-- Header -->
+    <div class="db-header">
+      <div class="db-header-left">
+        {% if user and user.avatar_url %}
+          <img src="{{ user.avatar_url }}" class="db-user-avatar" alt="avatar">
+        {% else %}
+          <div class="db-user-initials">{{ session['full_name'][0].upper() }}</div>
+        {% endif %}
+        <div>
+          <h1 class="db-greeting">Welcome back, {{ session['full_name'].split()[0] }} 👷</h1>
+          <p class="db-sub">Manage your requests, update availability, and grow your reputation.</p>
+        </div>
+      </div>
+      <div class="db-header-actions">
+        <a href="{{ url_for('incoming_requests') }}" class="btn-db-primary">
+          <i class="ph ph-bell"></i> Requests
+          {% if stats.pending > 0 %}<span style="background:rgba(255,255,255,.3);padding:.05rem .4rem;border-radius:999px;font-size:.75rem">{{ stats.pending }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('worker_profile') }}" class="btn-db-outline">
+          <i class="ph ph-pencil"></i> Edit Profile
+        </a>
+      </div>
+    </div>
+
+    <!-- Profile incomplete alert -->
+    {% if not profile or not profile.skills %}
+    <div class="profile-alert">
+      <i class="ph-fill ph-warning"></i>
+      <div>
+        <strong>Complete your profile!</strong>
+        <p>Add your skills and location so customers can find and hire you.</p>
+      </div>
+      <a href="{{ url_for('worker_profile') }}" class="btn-alert"><i class="ph ph-pencil-simple"></i> Update</a>
+    </div>
+    {% endif %}
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="scard sc-total">
+        <div class="scard-icon"><i class="ph-fill ph-briefcase"></i></div>
+        <div>
+          <span class="scard-num">{{ stats.total }}</span>
+          <div class="scard-label">Total Requests</div>
+        </div>
+      </div>
+      <div class="scard sc-pending">
+        <div class="scard-icon"><i class="ph-fill ph-clock"></i></div>
+        <div>
+          <span class="scard-num">{{ stats.pending }}</span>
+          <div class="scard-label">Pending</div>
+        </div>
+      </div>
+      <div class="scard sc-done">
+        <div class="scard-icon"><i class="ph-fill ph-seal-check"></i></div>
+        <div>
+          <span class="scard-num">{{ stats.completed }}</span>
+          <div class="scard-label">Completed Jobs</div>
+        </div>
+      </div>
+      <div class="scard sc-rating">
+        <div class="scard-icon"><i class="ph-fill ph-star"></i></div>
+        <div>
+          <span class="scard-num">{{ stats.avg_rating or '—' }}</span>
+          <div class="scard-label">Avg Rating</div>
+        </div>
+      </div>
+      <div class="scard sc-month">
+        <div class="scard-icon"><i class="ph-fill ph-calendar-check"></i></div>
+        <div>
+          <span class="scard-num">{{ stats.month_jobs }}</span>
+          <div class="scard-label">This Month</div>
+        </div>
+      </div>
+      <div class="scard sc-rejected">
+        <div class="scard-icon"><i class="ph-fill ph-x-circle"></i></div>
+        <div>
+          <span class="scard-num">{{ stats.rejected }}</span>
+          <div class="scard-label">Rejected</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badge Banner -->
+    {% set b = badge %}
+    <div class="badge-banner">
+      <span class="worker-badge {{ b.cls }}" style="--badge-color:{{ b.color }};font-size:.88rem;padding:.4rem .9rem">
+        <i class="ph-fill {{ b.icon }}"></i> {{ b.label }}
+      </span>
+      <span style="font-size:.82rem;color:#6b7280;flex:1">Your current trust badge — based on ratings &amp; completed jobs.</span>
+      {% if profile and profile.availability %}
+      <span style="font-size:.78rem;font-weight:700;padding:.35rem .8rem;border-radius:8px;{% if profile.availability == 'available' %}background:#ecfdf5;color:#065f46{% elif profile.availability == 'busy' %}background:#fffbeb;color:#92400e{% else %}background:#f3f4f6;color:#6b7280{% endif %}">
+        <i class="ph ph-circle-fill" style="font-size:.6rem"></i> {{ profile.availability|capitalize }}
+      </span>
+      {% endif %}
+    </div>
+
+    <!-- Main Grid -->
+    <div class="db-grid">
+      <!-- Left -->
+      <div>
+        <!-- Incoming Requests -->
+        <div class="db-card">
+          <div class="db-card-header">
+            <span class="db-card-title"><i class="ph ph-bell" style="color:#f59e0b"></i> Recent Requests</span>
+            <a href="{{ url_for('incoming_requests') }}" class="db-card-link">View All <i class="ph ph-arrow-right"></i></a>
+          </div>
+          {% if requests %}
+          <div>
+            {% for req in requests %}
+            <div class="req-item">
+              <div class="req-av">
+                {% if req.customer_avatar %}<img src="{{ req.customer_avatar }}" alt="">{% else %}{{ req.customer_name[0].upper() }}{% endif %}
+              </div>
+              <div class="req-body">
+                <div class="req-top">
+                  <span class="req-name">{{ req.customer_name }}</span>
+                  <span class="req-code">{{ req.request_code or ('#'+req.id|string) }}</span>
+                </div>
+                <div class="req-desc">{{ req.description[:70] }}{% if req.description|length > 70 %}…{% endif %}</div>
+                <div class="req-meta-row">
+                  <span><i class="ph ph-map-pin"></i>{{ req.location }}</span>
+                  <span><i class="ph ph-calendar"></i>{{ req.created_at.strftime('%d %b') }}</span>
+                  {% if req.status == 'pending' %}<span class="status-pill pill-pending">Pending</span>
+                  {% elif req.status == 'accepted' %}<span class="status-pill pill-accepted">Accepted</span>
+                  {% else %}<span class="status-pill" style="background:#fef2f2;color:#991b1b">Rejected</span>{% endif %}
+                </div>
+                {% if req.status == 'pending' %}
+                <div class="req-actions">
+                  <form method="POST" action="{{ url_for('update_request', req_id=req.id) }}" style="display:inline">
+                    <input type="hidden" name="status" value="accepted">
+                    <button type="submit" class="btn-accept"><i class="ph ph-check"></i> Accept</button>
+                  </form>
+                  <form method="POST" action="{{ url_for('update_request', req_id=req.id) }}" style="display:inline">
+                    <input type="hidden" name="status" value="rejected">
+                    <button type="submit" class="btn-reject"><i class="ph ph-x"></i> Reject</button>
+                  </form>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-box">
+            <div><i class="ph ph-inbox"></i></div>
+            <p>No requests yet. Complete your profile so customers can find you!</p>
+            <a href="{{ url_for('worker_profile') }}" class="btn-db-primary" style="font-size:.8rem">Complete Profile</a>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="db-card">
+          <div class="db-card-header">
+            <span class="db-card-title"><i class="ph ph-lightning" style="color:#f59e0b"></i> Quick Actions</span>
+          </div>
+          <div class="quick-grid">
+            <a href="{{ url_for('incoming_requests') }}" class="quick-card">
+              <i class="ph-fill ph-bell"></i><span>Incoming Requests</span>
+            </a>
+            <a href="{{ url_for('browse_jobs') }}" class="quick-card">
+              <i class="ph-fill ph-briefcase"></i><span>Browse Jobs</span>
+            </a>
+            <a href="{{ url_for('worker_profile') }}" class="quick-card">
+              <i class="ph-fill ph-user-circle"></i><span>Edit Profile</span>
+            </a>
+            <a href="{{ url_for('account_settings') }}" class="quick-card">
+              <i class="ph-fill ph-gear"></i><span>Settings</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Profile & Performance -->
+      <div>
+        <!-- Profile Card -->
+        <div class="db-card">
+          <div class="db-card-header">
+            <span class="db-card-title"><i class="ph ph-user-circle" style="color:#6366f1"></i> Profile</span>
+            <a href="{{ url_for('worker_profile') }}" class="db-card-link">Edit</a>
+          </div>
+          <div style="display:flex;align-items:center;gap:.9rem;margin-bottom:.8rem">
+            {% if user and user.avatar_url %}
+              <img src="{{ user.avatar_url }}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #e0e7ff" alt="">
+            {% else %}
+              <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:1.2rem;font-weight:700;display:flex;align-items:center;justify-content:center">{{ session['full_name'][0].upper() }}</div>
+            {% endif %}
+            <div>
+              <div style="font-weight:700;color:#1e1b4b">{{ session['full_name'] }}</div>
+              <div style="font-size:.76rem;color:#6b7280;margin-top:.1rem">
+                {% if profile and profile.location %}<i class="ph ph-map-pin"></i> {{ profile.location }}{% else %}<span style="color:#f59e0b">Location not set</span>{% endif %}
+              </div>
+            </div>
+          </div>
+          {% if profile and profile.skills %}
+          <div class="skill-chips">
+            {% for sk in profile.skills.split(',')[:6] %}
+            <span class="skill-chip">{{ sk.strip() }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Performance Summary -->
+        {% if wstats and wstats.total_ratings > 0 %}
+        <div class="db-card">
+          <div class="db-card-header">
+            <span class="db-card-title"><i class="ph ph-chart-bar" style="color:#6366f1"></i> Performance</span>
+          </div>
+          {% set cats = [('Punctuality', wstats.avg_punctuality), ('Quality', wstats.avg_quality), ('Communication', wstats.avg_communication)] %}
+          {% for label, val in cats %}
+          {% if val %}
+          <div class="perf-row">
+            <div class="perf-label"><span>{{ label }}</span><span>{{ val }}/5</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width:{{ (val/5*100)|int }}%"></div></div>
+          </div>
+          {% endif %}
+          {% endfor %}
+          <div style="font-size:.75rem;color:#6b7280;margin-top:.5rem">Based on {{ wstats.total_ratings }} rating(s)</div>
+        </div>
+        {% endif %}
+
+        <!-- Motivational Card -->
+        <div class="db-card" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none">
+          <div style="font-weight:700;font-size:.95rem;margin-bottom:.5rem"><i class="ph ph-trophy"></i> Keep It Up!</div>
+          <p style="font-size:.8rem;opacity:.9;margin:0">
+            {% if stats.completed == 0 %}Complete your first job to start building your reputation!
+            {% elif stats.completed < 5 %}{{ stats.completed }} job(s) done — keep accepting requests to level up your badge!
+            {% else %}Amazing! {{ stats.completed }} jobs completed. You're on the path to Elite Pro!{% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Create Account — Local Help Connect{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-page{min-height:calc(100vh - 70px);background:linear-gradient(135deg,#f0f4ff 0%,#fdf4ff 100%);display:flex;align-items:center;justify-content:center;padding:2rem 1rem}
+.auth-card{background:#fff;border-radius:22px;padding:2rem 2.2rem;width:100%;max-width:500px;box-shadow:0 8px 40px rgba(99,102,241,.12);border:1px solid #f0f0f5}
+.auth-logo{display:flex;align-items:center;gap:.7rem;justify-content:center;margin-bottom:1.2rem}
+.auth-logo-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem}
+.auth-logo-text{font-size:1.25rem;font-weight:800;color:#1e1b4b}
+.auth-logo-text span{color:#6366f1}
+.auth-title{font-size:1.3rem;font-weight:800;color:#1e1b4b;text-align:center;margin:0 0 .3rem}
+.auth-sub{font-size:.82rem;color:#6b7280;text-align:center;margin-bottom:1.4rem}
+/* Avatar upload */
+.av-upload-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:1.2rem}
+.av-ring{width:72px;height:72px;border-radius:50%;border:2.5px dashed #c7d2fe;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:border-color .2s;position:relative}
+.av-ring:hover{border-color:#6366f1}
+.av-ring img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av-ring-placeholder{display:flex;flex-direction:column;align-items:center;gap:.2rem;color:#a5b4fc;font-size:.7rem}
+.av-ring-placeholder i{font-size:1.6rem}
+#regAvInput{display:none}
+.av-upload-label{font-size:.75rem;color:#6b7280;margin-top:.4rem}
+/* Role tabs */
+.role-tabs{display:flex;gap:.5rem;background:#f3f4f6;border-radius:10px;padding:.25rem;margin-bottom:1.2rem}
+.role-tab{flex:1;text-align:center;padding:.5rem;border-radius:7px;font-size:.84rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:#6b7280;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.35rem}
+.role-tab.active{background:#fff;color:#6366f1;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+/* Fields */
+.form-row{margin-bottom:1rem}
+label{display:block;font-size:.8rem;font-weight:600;color:#374151;margin-bottom:.35rem}
+.form-input{width:100%;padding:.58rem .9rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.9rem;font-family:inherit;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.07)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+@media(max-width:500px){.form-row-2{grid-template-columns:1fr}}
+.pw-wrap{position:relative}
+.pw-toggle{position:absolute;right:.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;font-size:1rem;padding:0}
+.btn-submit{width:100%;padding:.7rem;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;transition:opacity .2s;margin-top:.3rem}
+.btn-submit:hover{opacity:.88}
+.auth-alt{text-align:center;font-size:.82rem;color:#6b7280;margin-top:1rem}
+.auth-alt a{color:#6366f1;font-weight:600;text-decoration:none}
+.phone-avail{font-size:.72rem;margin-top:.25rem}
+.avail-ok{color:#10b981}
+.avail-taken{color:#ef4444}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="auth-logo-icon">
+        <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 44l7-14 5 8 4-6 8 12H20z" fill="#a5b4fc" opacity=".9"/>
+          <circle cx="38" cy="20" r="5" fill="white"/>
+        </svg>
+      </div>
+      <div class="auth-logo-text">Local<span>Help</span></div>
+    </div>
+    <h1 class="auth-title">Create Account</h1>
+    <p class="auth-sub">Join the community — hire or offer local services</p>
+
+    <!-- Avatar upload -->
+    <div class="av-upload-wrap">
+      <div class="av-ring" onclick="document.getElementById('regAvInput').click()" title="Upload profile photo">
+        <div class="av-ring-placeholder" id="avPlaceholder">
+          <i class="ph ph-camera"></i>
+          <span>Photo</span>
+        </div>
+        <img id="regAvPreview" src="" alt="" style="display:none">
+      </div>
+      <span class="av-upload-label">Optional: add a profile photo</span>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="regForm">
+      <input type="file" id="regAvInput" name="avatar" accept="image/*" onchange="previewRegAv(this)">
+
+      <!-- Role Tabs -->
+      <div class="role-tabs">
+        <button type="button" class="role-tab active" onclick="setRole('customer',this)">
+          <i class="ph ph-user"></i> Customer
+        </button>
+        <button type="button" class="role-tab" onclick="setRole('worker',this)">
+          <i class="ph ph-wrench"></i> Worker
+        </button>
+      </div>
+      <input type="hidden" name="role" id="roleInput" value="{{ form_data.get('role','customer') }}">
+
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>Full Name *</label>
+          <input type="text" name="full_name" class="form-input" value="{{ form_data.get('full_name','') }}" required placeholder="Your full name">
+        </div>
+        <div class="form-row">
+          <label>Phone Number *</label>
+          <input type="text" name="phone" class="form-input" id="phoneInput" value="{{ form_data.get('phone','') }}" required placeholder="10-digit number">
+          <div class="phone-avail" id="phoneAvail"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Email Address</label>
+        <input type="email" name="email" class="form-input" value="{{ form_data.get('email','') }}" placeholder="Optional">
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>Password *</label>
+          <div class="pw-wrap">
+            <input type="password" name="password" class="form-input" id="pw1" required minlength="6" placeholder="Min 6 characters">
+            <button type="button" class="pw-toggle" onclick="togglePw('pw1',this)"><i class="ph ph-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Confirm Password *</label>
+          <div class="pw-wrap">
+            <input type="password" name="confirm_password" class="form-input" id="pw2" required minlength="6" placeholder="Repeat password">
+            <button type="button" class="pw-toggle" onclick="togglePw('pw2',this)"><i class="ph ph-eye"></i></button>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit"><i class="ph ph-user-plus"></i> Create Account</button>
+    </form>
+
+    <div class="auth-alt">Already have an account? <a href="{{ url_for('login') }}">Sign In</a></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setRole(role, el) {
+  document.getElementById('roleInput').value = role;
+  document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  const isText = inp.type === 'text';
+  inp.type = isText ? 'password' : 'text';
+  btn.innerHTML = isText ? '<i class="ph ph-eye"></i>' : '<i class="ph ph-eye-slash"></i>';
+}
+function previewRegAv(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('avPlaceholder').style.display = 'none';
+    const img = document.getElementById('regAvPreview');
+    img.src = e.target.result;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+// Phone availability check
+let phoneTimer;
+document.getElementById('phoneInput').addEventListener('input', function(){
+  clearTimeout(phoneTimer);
+  const v = this.value.trim();
+  const el = document.getElementById('phoneAvail');
+  if (v.length < 6) { el.textContent=''; return; }
+  phoneTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(`/api/check-phone?phone=${encodeURIComponent(v)}`);
+      const d = await r.json();
+      el.textContent = d.available ? '✓ Available' : '✗ Already registered';
+      el.className = 'phone-avail ' + (d.available ? 'avail-ok' : 'avail-taken');
+    } catch(e){}
+  }, 500);
+});
+// Pre-select role from form_data
+const savedRole = '{{ form_data.get("role","customer") }}';
+document.querySelectorAll('.role-tab').forEach(t => {
+  if (t.textContent.trim().toLowerCase().includes(savedRole)) {
+    document.querySelectorAll('.role-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  }
+});
+</script>
+{% endblock %}
